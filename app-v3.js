@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
         options.forEach((opt, index) => {
             if (opt.price !== undefined) {
                 const checked = index === 0 ? 'checked' : '';
-                optionSelector.innerHTML += `<input type="radio" id="opt_${opt.key}" name="price_option" value="${opt.key}" data-price="${opt.price}" ${checked}><label for="opt_${opt.key}">${opt.name} (¥${opt.price})</label>`;
+                optionSelector.innerHTML += `<div class="option-item"><input type="radio" id="opt_${opt.key}" name="price_option" value="${opt.key}" data-price="${opt.price}" ${checked}><label for="opt_${opt.key}">${opt.name} (¥${opt.price})</label></div>`;
             }
         });
         document.getElementsByName('price_option').forEach(r => r.addEventListener('change', updateModalPrice));
@@ -139,20 +139,17 @@ document.addEventListener('DOMContentLoaded', function() {
         confirmOrderButton.disabled = cart.length === 0;
     }
 
-    // --- ▼▼▼ 注文確定処理に、詳細なエラーチェックを追加しました ▼▼▼ ---
     async function submitOrder() {
         if (cart.length === 0) return;
         confirmOrderButton.disabled = true;
         confirmOrderButton.textContent = '注文処理中...';
 
         try {
-            // Step 1: ログイン状態を確認
             if (!liff.isLoggedIn()) {
                 liff.login();
                 return; 
             }
             
-            // Step 2: LINEプロフィール情報を取得
             let userId, displayName;
             try {
                 const profile = await liff.getProfile();
@@ -162,7 +159,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(`LINEプロファイルの取得に失敗しました。LIFFアプリに 'profile' の権限があるか確認してください。\nError: ${profileError.message}`);
             }
 
-            // Step 3: 注文内容とLINEメッセージを作成
             let orderDetailsText = '';
             cart.forEach(item => {
                 orderDetailsText += `${item.name} (${item.option.name}) x ${item.quantity}\n`;
@@ -171,7 +167,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const confirmationMessage = `ご注文ありがとうございます！\n\n---ご注文内容---\n${orderDetailsText.trim()}\n\n合計金額: ${totalPrice}円\n\nご注文を受け付けました。準備ができましたら、改めてご連絡いたします。`;
 
-            // Step 4: LINEにメッセージを送信
             try {
                 if (liff.isInClient() && liff.isApiAvailable('sendMessages')) {
                     await liff.sendMessages([{ type: 'text', text: confirmationMessage }]);
@@ -182,7 +177,6 @@ document.addEventListener('DOMContentLoaded', function() {
                  throw new Error(`LINEメッセージの送信に失敗しました。LIFFアプリに 'chat_message.write' の権限があるか確認してください。\nError: ${messageError.message}`);
             }
 
-            // Step 5: Larkに送信するデータを作成
             const orderId = new Date().getTime().toString() + Math.random().toString(36).substring(2, 8);
             const orderDate = new Date().toLocaleDateString('ja-JP');
             const payload = {
@@ -191,7 +185,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 fldY9IGZIs: totalPrice, fld1Yss0c8: orderDate
             };
 
-            // Step 6: GASにデータを送信
             const response = await fetch(GAS_API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -200,11 +193,11 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (!response.ok) {
-                throw new Error(`GASへの通信に失敗しました。サーバー応答エラー: ${response.status}`);
+                const errorText = await response.text();
+                throw new Error(`GASへの通信に失敗しました。サーバー応答エラー: ${response.status}. Response: ${errorText}`);
             }
             const result = await response.json();
 
-            // Step 7: GASからの応答を処理
             if (result.status === 'success') {
                 alert('ご注文が完了しました。');
                 liff.closeWindow();
@@ -212,16 +205,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(result.message || 'Lark Baseへの書き込みに失敗しました (GASからのエラー)。');
             }
         } catch (error) {
-            // どのステップで失敗したか、具体的なエラーメッセージを表示
             alert(`注文処理中にエラーが発生しました。\n\n詳細: ${error.message}\n\nお手数ですが、お店に直接ご連絡ください。`);
             confirmOrderButton.disabled = false;
             confirmOrderButton.textContent = '注文を確定する';
         }
     }
-    // --- ▲▲▲ エラーチェック機能を追加 ▲▲▲ ---
 
     modalCloseButton.addEventListener('click', closeModal);
     modalBackdrop.addEventListener('click', (e) => { if (e.target === modalBackdrop) closeModal(); });
     confirmOrderButton.addEventListener('click', submitOrder);
 });
-
