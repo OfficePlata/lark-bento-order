@@ -300,14 +300,33 @@ document.addEventListener('DOMContentLoaded', function() {
             
             debugLog(`📡 リクエストオプション: ${JSON.stringify(fetchOptions)}`);
             
-            const response = await fetch(GAS_API_URL, fetchOptions);
+            let response;
+            try {
+                debugLog(`📡 fetch実行開始...`);
+                response = await fetch(GAS_API_URL, fetchOptions);
+                debugLog(`📡 fetch実行完了`);
+            } catch (fetchError) {
+                debugLog(`❌ fetchエラー: ${fetchError.message}`);
+                debugLog(`❌ fetchエラータイプ: ${fetchError.name}`);
+                debugLog(`❌ fetchエラースタック: ${fetchError.stack}`);
+                throw new Error(`ネットワークエラー: ${fetchError.message}`);
+            }
 
             debugLog(`📡 GASレスポンス status: ${response.status}`);
             debugLog(`📡 GASレスポンス ok: ${response.ok}`);
             debugLog(`📡 GASレスポンス headers: ${JSON.stringify([...response.headers.entries()])}`);
 
             // レスポンステキストを取得
-            const responseText = await response.text();
+            let responseText;
+            try {
+                debugLog(`📡 レスポンステキスト取得開始...`);
+                responseText = await response.text();
+                debugLog(`📡 レスポンステキスト取得完了`);
+            } catch (textError) {
+                debugLog(`❌ レスポンステキスト取得エラー: ${textError.message}`);
+                throw new Error(`レスポンス読み取りエラー: ${textError.message}`);
+            }
+            
             debugLog(`📡 GASレスポンステキスト: "${responseText}"`);
             debugLog(`📡 レスポンステキスト長: ${responseText.length}文字`);
 
