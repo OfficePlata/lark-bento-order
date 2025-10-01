@@ -6,7 +6,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyfa5MloSmfy15CqXLxvlhzVnjV75Ghx4uV3RE1gqfD-VSq3Cwan_wShv0r1FFLV7uw/exec";
     // ステップ5で確定するLarkフォームの共有URLを設定
     const LARK_FORM_URL = "https://yjpw4ydvu698.jp.larksuite.com/share/base/form/shrjprndeQ1HbiZyHWfSXVgazTf";
-    // --- 設定項目ここまで ---
     // グローバル変数
     let menuData = [];
     let cart = [];
@@ -183,10 +182,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (cart.length === 0) return;
 
         try {
-            if (!liff.isInClient()) {
-                alert("この機能はLINEアプリ内でのみ利用可能です。\nPCでテストしている場合、このメッセージが表示されるのは正常な動作です。\n実際の動作は、スマートフォンにURLを送ってご確認ください。");
-                return;
-            }
             if (!liff.isLoggedIn()) {
                 alert("LINEログインが必要です。\nOKを押すとログインします。");
                 liff.login();
@@ -194,8 +189,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             const idToken = liff.getDecodedIDToken();
-            const userId = idToken.sub; // ユーザーID
-            const displayName = idToken.name; // 表示名
+            const userId = idToken.sub;
+            const displayName = idToken.name;
 
             let orderDetailsText = '';
             cart.forEach(item => {
@@ -206,17 +201,19 @@ document.addEventListener('DOMContentLoaded', function() {
             const fullOrderTextForMessage = `${orderDetailsText}\n合計金額: ${totalPrice}円`;
             localStorage.setItem('bentoOrderData', JSON.stringify({ text: fullOrderTextForMessage }));
 
-            // --- ▼▼▼ 共有いただいたフィールドIDを正確に反映させました ▼▼▼ ---
             const params = new URLSearchParams();
-            params.set('fldYLRXpXN', userId);        // LINEユーザーID
-            params.set('fld9MWY8Pv', displayName);   // LINE表示名
-            params.set('flduAKumTJ', orderDetailsText.trim());// 注文詳細
-            params.set('fldY9IGZIs', totalPrice);            // 合計金額
-            // --- ▲▲▲ ここまで修正 ▲▲▲ ---
+            params.set('fldYLRXpXN', userId);
+            params.set('fld9MWY8Pv', displayName);
+            params.set('flduAKumTJ', orderDetailsText.trim());
+            params.set('fldY9IGZIs', totalPrice);
 
             const finalUrl = `${LARK_FORM_URL}?${params.toString()}`;
 
-            liff.openWindow({ url: finalUrl, external: true });
+            // --- ▼▼▼ ここを修正しました ▼▼▼ ---
+            // 外部ブラウザではなく、同じLIFFウィンドウ内でページを遷移させます。
+            // これにより、localStorageの情報がthankyou.htmlに引き継がれるようになります。
+            window.location.assign(finalUrl);
+            // --- ▲▲▲ ここまで修正 ▲▲▲ ---
 
         } catch (error) {
             console.error('Failed to process order:', error);
