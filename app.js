@@ -28,11 +28,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
     async function fetchMenuData() {
-        // --- ▼▼▼ デバッグ機能を追加しました ▼▼▼ ---
-        // アプリが開かれた瞬間に、どのGAS URLを読み込んでいるかアラートで表示します。
-        alert("Connecting to GAS URL:\n" + GAS_API_URL);
-        // --- ▲▲▲ デバッグ機能ここまで ▲▲▲ ---
-
         if (GAS_API_URL === "YOUR_FINAL_GAS_URL_HERE") {
             loadingIndicator.textContent = "GAS_API_URLが設定されていません。";
             return;
