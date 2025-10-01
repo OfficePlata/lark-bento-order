@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ステップ5で確定するLarkフォームの共有URLを設定
     const LARK_FORM_URL = "https://yjpw4ydvu698.jp.larksuite.com/share/base/form/shrjprndeQ1HbiZyHWfSXVgazTf";
     // --- 設定項目ここまで ---
-
+    
     // グローバル変数
     let menuData = [];
     let cart = [];
@@ -160,8 +160,7 @@ document.addEventListener('DOMContentLoaded', function() {
             option: selectedOption,
             totalPrice: selectedOption.price * quantity,
         };
-
-        // 同じ商品・オプションが既にあれば数量を加算（今回は簡単化のため常に新規追加）
+        
         cart.push(cartItem);
         
         updateCartView();
@@ -179,11 +178,28 @@ document.addEventListener('DOMContentLoaded', function() {
         confirmOrderButton.disabled = cart.length === 0;
     }
 
+    // --- ▼▼▼ ここを修正しました ▼▼▼ ---
     // 注文確定処理
     async function confirmOrderAndRedirect() {
         if (cart.length === 0) return;
 
         try {
+            // LIFFがLINEクライアント内で実行されているか確認
+            if (!liff.isInClient()) {
+                alert("この機能はLINEアプリ内でご利用ください。");
+                return;
+            }
+
+            // ログイン状態を確認
+            if (!liff.isLoggedIn()) {
+                // ログインしていない場合は、ログインを促す
+                // これにより権限同意画面が表示され、ユーザーが同意するとLIFFページにリダイレクトして戻ってくる
+                alert("LINEログインが必要です。\nOKを押すとログインします。");
+                liff.login();
+                return; // liff.login()はページをリダイレクトさせるので、ここで処理を中断
+            }
+            
+            // ログイン済みの場合、プロフィールを取得
             const profile = await liff.getProfile();
             
             let orderDetailsText = '';
@@ -206,10 +222,11 @@ document.addEventListener('DOMContentLoaded', function() {
             liff.openWindow({ url: finalUrl, external: true });
 
         } catch (error) {
-            console.error('Failed to get profile or redirect:', error);
-            alert('エラーが発生しました。もう一度お試しください。');
+            console.error('Failed to process order:', error);
+            alert('処理中にエラーが発生しました。もう一度お試しください。');
         }
     }
+    // --- ▲▲▲ ここまで修正 ▲▲▲ ---
 
     // イベントリスナー設定
     modalCloseButton.addEventListener('click', closeModal);
@@ -218,3 +235,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     confirmOrderButton.addEventListener('click', confirmOrderAndRedirect);
 });
+
