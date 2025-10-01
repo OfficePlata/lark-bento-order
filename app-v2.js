@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // --- ▼▼▼ 最終設定項目 ▼▼▼ ---
-    const MAIN_LIFF_ID = "2008199273-3ogv1YME"; // あなたのメイン注文用LIFF ID
-    // 【最重要】ステップ2で取得する「最後の新しいGAS URL」をここに貼り付けてください
+    const MAIN_LIFF_ID = "2008199273-vOQb1bWj"; // あなたのメイン注文用LIFF ID
+    // 【最重要】ステップ3で取得する「最後の新しいGAS URL」をここに貼り付けてください
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxUnPklomhODN1bSBTOdaEF7eXYLTTUF_mGUrrXssC8W_tjOTqZXLt_fYbkZH2H44dx/exec";
     // --- ▲▲▲ 最終設定項目 ▲▲▲ ---
 
@@ -201,4 +201,5 @@ document.addEventListener('DOMContentLoaded', function() {
     modalBackdrop.addEventListener('click', (e) => { if (e.target === modalBackdrop) closeModal(); });
     confirmOrderButton.addEventListener('click', submitOrder);
 });
+
 
