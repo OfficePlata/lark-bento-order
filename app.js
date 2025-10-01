@@ -1,8 +1,8 @@
 document.addEventListener('DOMContentLoaded', function() {
     // --- ▼▼▼ 設定項目 ▼▼▼ ---
     const MAIN_LIFF_ID = "2008199273-3ogv1YME"; 
-    // 【重要】ステップ2で取得した「全く新しいGASのURL」をここに貼り付けてください
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbznSWbRmTv0tO23AI3zHbg0eIJojzH0YCxNCweeN_k-AgbYp5WwTbUhTRwlW0YILVeC/exec";
+    // 【重要】前回正常に接続できたGASのURLをここに設定してください
+    const GAS_API_URL = "https://script.google.com/macros/library/d/1ntHGDIE3UV_ElHOI36fFdK1djSn6FS5n6ovvSt4YuaRAcF17Z_j0MICD/13";
     // --- ▲▲▲ 設定項目 ▲▲▲ ---
 
     // (これより下の部分は変更不要です)
@@ -130,31 +130,56 @@ document.addEventListener('DOMContentLoaded', function() {
     async function submitOrder() {
         if (cart.length === 0) return;
         confirmOrderButton.disabled = true;
-        confirmOrderButton.textContent = '処理中...';
-        
+        confirmOrderButton.textContent = '注文処理中...';
+
         try {
-            const payload = { test: "data" }; // 送るデータはダミーでOK
+            if (!liff.isLoggedIn()) {
+                alert("LINEログインが必要です。OKを押すとログインします。");
+                liff.login();
+                return;
+            }
+            
+            const idToken = liff.getDecodedIDToken();
+            const userId = idToken.sub;
+            const displayName = idToken.name;
+
+            let orderDetailsText = '';
+            cart.forEach(item => {
+                orderDetailsText += `${item.name} (${item.option.name}) x ${item.quantity}\n`;
+            });
+            const totalPrice = cart.reduce((sum, item) => sum + item.totalPrice, 0);
+            
+            const confirmationMessage = `ご注文ありがとうございます！\n\n---ご注文内容---\n${orderDetailsText.trim()}\n\n合計金額: ${totalPrice}円\n\nご注文を受け付けました。準備ができましたら、改めてご連絡いたします。`;
+
+            if (liff.isInClient() && liff.isApiAvailable('sendMessages')) {
+                await liff.sendMessages([{ type: 'text', text: confirmationMessage }]);
+            }
+
+            const orderId = new Date().getTime().toString() + Math.random().toString(36).substring(2, 8);
+            const orderDate = new Date().toLocaleDateString('ja-JP');
+
+            const payload = {
+                fldYjlldjn: orderId, fldYLRXpXN: userId, fld9MWY8Pv: displayName,
+                fldqDpai9t: displayName, flduAKumTJ: orderDetailsText.trim(),
+                fldY9IGZIs: totalPrice, fld1Yss0c8: orderDate
+            };
+
             const response = await fetch(GAS_API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify(payload),
-                mode: 'cors'
+                mode: 'cors' 
             });
             const result = await response.json();
 
-            // --- ▼▼▼ デバッグ用の確認処理 ▼▼▼ ---
-            if (result.status === 'debug_success') {
-                alert('GASへの接続に成功しました！\nサーバーからのメッセージ:\n' + result.message);
-                confirmOrderButton.disabled = false;
-                confirmOrderButton.textContent = '注文を確定する';
-                return; 
+            if (result.status === 'success') {
+                alert('ご注文が完了しました。');
+                liff.closeWindow();
+            } else {
+                throw new Error(result.message || 'Lark Baseへの書き込みに失敗しました。');
             }
-            // --- ▲▲▲ デバッグ処理ここまで ▲▲▲ ---
-            
-            throw new Error(result.message || '予期せぬエラーが発生しました。');
-
         } catch (error) {
-            alert(`注文処理中にエラーが発生しました。\n${error.message}`);
+            alert(`注文処理中にエラーが発生しました。\n${error.message}\nお手数ですが、お店に直接ご連絡ください。`);
             confirmOrderButton.disabled = false;
             confirmOrderButton.textContent = '注文を確定する';
         }
