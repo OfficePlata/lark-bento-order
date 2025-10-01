@@ -178,7 +178,7 @@ document.addEventListener('DOMContentLoaded', function() {
         confirmOrderButton.disabled = cart.length === 0;
     }
 
-    // --- ▼▼▼ ここを修正しました ▼▼▼ ---
+    
     // 注文確定処理
     async function confirmOrderAndRedirect() {
         if (cart.length === 0) return;
@@ -211,11 +211,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const fullOrderTextForMessage = `${orderDetailsText}\n合計金額: ${totalPrice}円`;
             localStorage.setItem('bentoOrderData', JSON.stringify({ text: fullOrderTextForMessage }));
 
+            // --- ▼▼▼ ここを修正しました ▼▼▼ ---
+            // URLパラメータを、日本語の項目名からLarkフォーム固有のフィールドIDに変更
             const params = new URLSearchParams();
-            params.set('注文詳細', orderDetailsText.trim());
-            params.set('合計金額', totalPrice);
-            params.set('LINEユーザーID', profile.userId);
-            params.set('LINE表示名', profile.displayName);
+            params.set('fldS3gP5O2', orderDetailsText.trim()); // ご注文内容
+            params.set('fldnY5nS4R', totalPrice);             // 合計金額
+            params.set('fldG7V4s2n', profile.userId);         // LINEユーザーID
+            params.set('fldxqy5nOt', profile.displayName);    // LINE表示名
+            // --- ▲▲▲ ここまで修正 ▲▲▲ ---
 
             const finalUrl = `${LARK_FORM_URL}?${params.toString()}`;
 
@@ -226,7 +229,7 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('処理中にエラーが発生しました。もう一度お試しください。');
         }
     }
-    // --- ▲▲▲ ここまで修正 ▲▲▲ ---
+    
 
     // イベントリスナー設定
     modalCloseButton.addEventListener('click', closeModal);
