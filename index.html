@@ -2,8 +2,8 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>お弁当注文</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>お弁当 注文</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,9 +12,12 @@
     </header>
 
     <main id="app-container">
-        <div id="loading-indicator">メニューを読み込んでいます...</div>
+        <div id="loading-indicator">
+            <div class="spinner"></div>
+            <p>メニューを読み込んでいます...</p>
+        </div>
         <div id="menu-container" class="grid-container">
-            <!-- メニューアイテムはここに動的に挿入されます -->
+            <!-- メニューアイテムがここに挿入されます -->
         </div>
     </main>
 
@@ -22,31 +25,42 @@
         <div class="cart-summary">
             <span id="cart-item-count">0</span>点 / 合計 <span id="cart-total-price">0</span>円
         </div>
-        <button id="confirm-order-button" disabled>注文を確定する</button>
+        <button id="confirm-order-button" class="confirm-button" disabled>注文を確定する</button>
     </footer>
 
     <!-- 商品詳細モーダル -->
     <div id="modal-backdrop">
         <div id="modal-content">
-            <button id="modal-close-button" aria-label="閉じる">&times;</button>
+            <button id="modal-close-button" class="close-button">&times;</button>
             <img id="modal-image" src="" alt="商品画像">
             <h2 id="modal-name"></h2>
             <p id="modal-description"></p>
-            <div id="option-selector"></div>
-            <div class="price-display">
-                価格: ¥<span id="modal-price">0</span>
+            
+            <div class="options-group">
+                <h3>オプション</h3>
+                <div id="option-selector">
+                    <!-- オプションがここに挿入されます -->
+                </div>
             </div>
-            <div class="quantity-selector">
-                <button id="decrease-qty" aria-label="減らす">-</button>
-                <span id="quantity">1</span>
-                <button id="increase-qty" aria-label="増やす">+</button>
+
+            <div class="quantity-group">
+                <h3>数量</h3>
+                <div class="quantity-control">
+                    <button id="decrease-qty">-</button>
+                    <span id="quantity">1</span>
+                    <button id="increase-qty">+</button>
+                </div>
             </div>
-            <button id="add-to-cart-button">カートに追加</button>
+
+            <div class="modal-footer">
+                <p class="total-price">合計: ¥<span id="modal-price">0</span></p>
+                <button id="add-to-cart-button" class="add-to-cart-btn">カートに追加</button>
+            </div>
         </div>
     </div>
 
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <script src="app.js"></script>
+    <!-- 読み込むJSファイルをapp-v3.jsに変更 -->
+    <script src="app-v3.js"></script>
 </body>
 </html>
-
