@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- ▼▼▼ 最終設定項目 ▼▼▼ ---
     const MAIN_LIFF_ID = "2008199273-3ogv1YME";
     // 【重要】デプロイしたGASのURLをここに設定してください
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbx_GT6kxV_5o5kETiaUmDfMlXCu8pU0E7pvR9OLM5pAUd6FVjdwg8IDOK2EeIUgFKIp/exec";
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbw66h8EqqBasC1DK923cFu1mzVP-7LxYV4gqidKSyEJhHj1AAjJxhGtg_hQXeXPYcLA/exec";
     // --- ▲▲▲ 最終設定項目 ▲▲▲ ---
     // (これより下の部分は変更不要です)
     let menuData = [];
