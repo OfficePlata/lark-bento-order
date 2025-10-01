@@ -33,11 +33,20 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         try {
+            console.log("Fetching menu data from:", GAS_API_URL);
             const response = await fetch(GAS_API_URL);
+            console.log("Menu fetch response status:", response.status);
+            
             if (!response.ok) {
                 throw new Error(`サーバー応答エラー: ${response.status}`);
             }
-            menuData = await response.json();
+            
+            const responseText = await response.text();
+            console.log("Menu response text:", responseText);
+            
+            menuData = JSON.parse(responseText);
+            console.log("Parsed menu data:", menuData);
+            
             if (menuData.error) {
                 throw new Error(menuData.error);
             }
@@ -139,78 +148,200 @@ document.addEventListener('DOMContentLoaded', function() {
         confirmOrderButton.disabled = cart.length === 0;
     }
 
+    // 【修正】submitOrder関数を完全に書き換え
     async function submitOrder() {
         if (cart.length === 0) return;
+        
+        console.log("=== 注文処理開始 ===");
+        
+        // ボタンを無効化してローディング状態にする
         confirmOrderButton.disabled = true;
         confirmOrderButton.textContent = '注文処理中...';
 
         try {
+            // ログイン確認
             if (!liff.isLoggedIn()) {
+                console.log("User not logged in, redirecting to login");
                 liff.login();
                 return; 
             }
             
+            // ユーザー情報の取得
             const profile = await liff.getProfile();
             const userId = profile.userId;
             const displayName = profile.displayName;
+            console.log("User profile:", { userId, displayName });
 
+            // 注文詳細の準備
             let orderDetailsText = '';
             cart.forEach(item => {
                 orderDetailsText += `${item.name} (${item.option.name}) x ${item.quantity}\n`;
             });
             const totalPrice = cart.reduce((sum, item) => sum + item.totalPrice, 0);
             
-            const confirmationMessage = `ご注文ありがとうございます！\n\n---ご注文内容---\n${orderDetailsText.trim()}\n\n合計金額: ${totalPrice}円\n\nご注文を受け付けました。準備ができましたら、改めてご連絡いたします。`;
-
-            // --- ▼▼▼ ここを修正しました (ご提示のロジックを反映) ▼▼▼ ---
-            try {
-                // liff.sendMessagesが利用可能かチェック
-                if (liff.isApiAvailable('sendMessages')) {
-                    await liff.sendMessages([{ type: 'text', text: confirmationMessage }]);
-                } else {
-                    // LINEクライアント外、またはAPIが利用不可の場合はコンソールに警告を出す
-                    console.warn('LINEメッセージは送信されません (LINEクライアント外、またはAPIが利用不可)');
-                }
-            } catch (messageError) {
-                // メッセージ送信に失敗した場合のエラーハンドリング
-                console.error(`LINEメッセージの送信に失敗しました。Error: ${messageError.message}`);
-                // 注文処理は続行するため、ここではエラーをスローしない
-            }
-            // --- ▲▲▲ 修正ここまで ▲▲▲ ---
-
-            const orderId = new Date().getTime().toString() + Math.random().toString(36).substring(2, 8);
-            const orderDate = new Date().toLocaleDateString('ja-JP');
-            const payload = {
-                fldYjlldjn: orderId, fldYLRXpXN: userId, fld9MWY8Pv: displayName,
-                fldqDpai9t: displayName, flduAKumTJ: orderDetailsText.trim(),
-                fldY9IGZIs: totalPrice, fld1Yss0c8: orderDate
+            // 注文データの準備（新しい形式）
+            const orderData = {
+                orderId: new Date().getTime().toString() + Math.random().toString(36).substring(2, 8),
+                userId: userId,
+                displayName: displayName,
+                orderDetails: orderDetailsText.trim(),
+                totalPrice: totalPrice
             };
+            
+            console.log('送信する注文データ:', orderData);
 
+            // LINEメッセージ送信（可能な場合のみ）
+            await sendLineMessageIfPossible(orderData);
+
+            // GASへのリクエスト送信
+            console.log('GASにリクエストを送信中...', GAS_API_URL);
             const response = await fetch(GAS_API_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify(payload),
-                mode: 'cors' 
+                headers: { 
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(orderData)
             });
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`GASへの通信に失敗しました。サーバー応答エラー: ${response.status}. Response: ${errorText}`);
-            }
-            const result = await response.json();
+            console.log('GASレスポンス status:', response.status);
+            console.log('GASレスポンス headers:', [...response.headers.entries()]);
 
+            // レスポンステキストを取得
+            const responseText = await response.text();
+            console.log('GASレスポンス text:', responseText);
+
+            // レスポンスが空でないことを確認
+            if (!responseText || responseText.trim() === '') {
+                throw new Error('GASから空のレスポンスが返されました');
+            }
+
+            // JSONパースを試行（エラーハンドリング付き）
+            let result;
+            try {
+                result = JSON.parse(responseText);
+            } catch (parseError) {
+                console.error('JSONパースエラー:', parseError);
+                console.error('パースに失敗したレスポンス:', responseText);
+                
+                // レスポンスの最初の100文字を表示してデバッグ
+                const preview = responseText.substring(0, 100);
+                throw new Error(`GASからの不正なJSONレスポンス: "${preview}..."`);
+            }
+
+            console.log('パース済みレスポンス:', result);
+
+            // エラーレスポンスの確認
+            if (result.status === 'error') {
+                throw new Error(`注文処理エラー: ${result.message}`);
+            }
+
+            // 成功時の処理
             if (result.status === 'success') {
+                console.log('注文処理成功');
                 alert('ご注文が完了しました。');
+                
+                // カートをクリア
+                cart = [];
+                updateCartView();
+                
+                // LIFFウィンドウを閉じる
                 liff.closeWindow();
             } else {
-                throw new Error(result.message || 'Lark Baseへの書き込みに失敗しました (GASからのエラー)。');
+                throw new Error('予期しないレスポンス形式です');
             }
+
         } catch (error) {
-            alert(`注文処理中にエラーが発生しました。\n\n詳細: ${error.message}\n\nお手数ですが、お店に直接ご連絡ください。`);
+            console.error('注文処理エラー:', error);
+            
+            // ユーザーフレンドリーなエラーメッセージを表示
+            let userMessage = '注文処理中にエラーが発生しました。';
+            
+            if (error.message.includes('JSON')) {
+                userMessage += '\n詳細: システムの応答形式に問題があります。';
+            } else if (error.message.includes('Lark API')) {
+                userMessage += '\n詳細: データベースへの保存に失敗しました。';
+            } else if (error.message.includes('FieldNameNotFound')) {
+                userMessage += '\n詳細: データベースの設定に問題があります。';
+            } else {
+                userMessage += `\n詳細: ${error.message}`;
+            }
+            
+            userMessage += '\n\nお手数ですが、お店に直接ご連絡ください。';
+            
+            alert(userMessage);
+            
+        } finally {
+            // ボタンを元の状態に戻す
             confirmOrderButton.disabled = false;
             confirmOrderButton.textContent = '注文を確定する';
         }
     }
+
+    // 【追加】LINEメッセージ送信（可能な場合のみ）
+    async function sendLineMessageIfPossible(orderData) {
+        try {
+            // LINEクライアント内でsendMessagesが利用可能かチェック
+            if (liff.isApiAvailable('sendMessages')) {
+                const confirmationMessage = `ご注文ありがとうございます！\n\n---ご注文内容---\n${orderData.orderDetails}\n\n合計金額: ${orderData.totalPrice}円\n注文ID: ${orderData.orderId}\n\nご注文を受け付けました。準備ができましたら、改めてご連絡いたします。`;
+                
+                await liff.sendMessages([{
+                    type: 'text',
+                    text: confirmationMessage
+                }]);
+                
+                console.log('LINEメッセージを送信しました');
+            } else {
+                console.log('LINEメッセージ送信はスキップされました（LINEクライアント外）');
+            }
+        } catch (messageError) {
+            // メッセージ送信の失敗は注文処理全体を停止させない
+            console.warn('LINEメッセージの送信に失敗しましたが、注文は正常に処理されました:', messageError);
+        }
+    }
+
+    // 【追加】デバッグ用：GASエンドポイントのテスト
+    async function testGasEndpoint() {
+        try {
+            console.log('GASエンドポイントをテスト中...');
+            
+            const testData = {
+                orderId: 'test-' + Date.now(),
+                userId: 'test-user',
+                displayName: 'テストユーザー',
+                orderDetails: 'テスト注文',
+                totalPrice: 1000
+            };
+            
+            const response = await fetch(GAS_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(testData)
+            });
+            
+            const responseText = await response.text();
+            console.log('テストレスポンス:', responseText);
+            
+            const result = JSON.parse(responseText);
+            console.log('パース済みテストレスポンス:', result);
+            
+            if (result.status === 'success') {
+                console.log('✅ GASエンドポイントは正常に動作しています');
+                alert('✅ GASエンドポイントテスト成功');
+            } else {
+                console.log('❌ GASエンドポイントでエラーが発生:', result.message);
+                alert('❌ GASエンドポイントテスト失敗: ' + result.message);
+            }
+            
+        } catch (error) {
+            console.error('❌ GASエンドポイントテストでエラー:', error);
+            alert('❌ GASエンドポイントテストでエラー: ' + error.message);
+        }
+    }
+
+    // デバッグ用にグローバルに公開
+    window.testGasEndpoint = testGasEndpoint;
 
     modalCloseButton.addEventListener('click', closeModal);
     modalBackdrop.addEventListener('click', (e) => { if (e.target === modalBackdrop) closeModal(); });
