@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>お弁当 注文</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="app-header">
+        <h1>お弁当メニュー</h1>
+    </header>
+
+    <main id="app-container">
+        <div id="loading-indicator">読み込み中...</div>
+        <div id="menu-container" class="grid-container"></div>
+    </main>
+
+    <!-- カートエリア -->
+    <footer id="cart-area" class="cart-footer">
+        <div class="cart-summary">
+            <span id="cart-item-count">0</span> 点 / 合計 <span id="cart-total-price">0</span> 円
+        </div>
+        <button id="confirm-order-button" class="cart-button" disabled>注文内容を確認する</button>
+    </footer>
+
+    <!-- 商品詳細モーダル -->
+    <div id="modal-backdrop" class="modal-backdrop">
+        <div id="modal-content" class="modal-content">
+            <button id="modal-close-button" class="modal-close-button">&times;</button>
+            <img id="modal-image" src="" alt="商品画像">
+            <h2 id="modal-name">商品名</h2>
+            <p id="modal-description">商品説明</p>
+
+            <div class="modal-section">
+                <h3>オプション</h3>
+                <div id="option-selector" class="option-selector"></div>
+            </div>
+
+            <div class="modal-section">
+                <h3>数量</h3>
+                <div class="quantity-selector">
+                    <button id="decrease-qty">-</button>
+                    <span id="quantity">1</span>
+                    <button id="increase-qty">+</button>
+                </div>
+            </div>
+
+            <button id="add-to-cart-button" class="add-to-cart-button">
+                カートに追加 (<span id="modal-price">0</span>円)
+            </button>
+        </div>
+    </div>
+
+
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
