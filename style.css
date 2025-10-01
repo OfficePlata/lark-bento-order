@@ -1,59 +1,77 @@
 :root {
-    --primary-color: #4CAF50;
-    --primary-dark: #388E3C;
-    --background-color: #f5f5f5;
-    --text-color: #333;
-    --card-background: #fff;
-    --modal-background: #fff;
-    --footer-background: #fff;
+    --primary-color: #27ae60;
+    --primary-color-dark: #219d55;
+    --bg-light: #f4f5f7;
+    --text-dark: #333;
+    --text-light: #666;
+    --border-color: #e0e0e0;
+    --modal-bg: rgba(0, 0, 0, 0.6);
 }
 
-html, body {
-    margin: 0;
-    padding: 0;
+body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    background-color: var(--background-color);
-    color: var(--text-color);
-    overscroll-behavior: none; /* iOSでのバウンススクロールを防止 */
+    margin: 0;
+    background-color: var(--bg-light);
+    color: var(--text-dark);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .app-header {
     background-color: var(--primary-color);
     color: white;
-    padding: 16px;
+    padding: 15px 20px;
     text-align: center;
+    font-size: 1.2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     position: sticky;
     top: 0;
-    z-index: 100;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.app-header h1 {
-    margin: 0;
-    font-size: 1.2em;
+    z-index: 10;
 }
 
 #app-container {
-    padding: 16px;
-    padding-bottom: 100px; /* フッターの高さ分 */
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 15px;
+    padding-bottom: 90px; /* footer height */
 }
 
 #loading-indicator {
-    text-align: center;
-    padding: 40px;
-    color: #888;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    color: var(--text-light);
+}
+
+.spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border-left-color: var(--primary-color);
+    animation: spin 1s ease infinite;
+    margin-bottom: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 .grid-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 16px;
+    gap: 15px;
 }
 
 .grid-item {
-    background-color: var(--card-background);
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
     overflow: hidden;
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -62,117 +80,129 @@ html, body {
 }
 
 .grid-item:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
 }
 
 .grid-item img {
     width: 100%;
     height: 120px;
     object-fit: cover;
-    background-color: #eee;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .grid-item .item-info {
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
+    padding: 10px;
     flex-grow: 1;
 }
 
 .grid-item .item-name {
-    margin: 0 0 4px;
     font-weight: 600;
-    font-size: 0.95em;
-    flex-grow: 1;
+    margin: 0 0 5px 0;
+    font-size: 1rem;
+    color: var(--text-dark);
 }
 
 .grid-item .item-price {
-    margin: 0;
-    color: var(--primary-dark);
+    color: var(--primary-color);
     font-weight: bold;
+    margin: 0;
+    font-size: 0.9rem;
 }
 
 .app-footer {
+    background-color: white;
+    padding: 15px 20px;
+    border-top: 1px solid var(--border-color);
+    box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    background-color: var(--footer-background);
-    padding: 16px;
-    border-top: 1px solid #e0e0e0;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+    z-index: 10;
 }
 
 .cart-summary {
-    font-size: 1.1em;
-    font-weight: 500;
+    font-size: 1rem;
+    font-weight: 600;
 }
 
-#confirm-order-button {
+.confirm-button {
     background-color: var(--primary-color);
     color: white;
     border: none;
-    padding: 12px 24px;
-    border-radius: 24px;
-    font-size: 1em;
+    padding: 12px 20px;
+    border-radius: 25px;
+    font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s ease;
 }
 
-#confirm-order-button:hover {
-    background-color: var(--primary-dark);
+.confirm-button:hover {
+    background-color: var(--primary-color-dark);
 }
 
-#confirm-order-button:disabled {
+.confirm-button:disabled {
     background-color: #ccc;
     cursor: not-allowed;
 }
+
 
 /* Modal Styles */
 #modal-backdrop {
     position: fixed;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.6);
-    display: none;
-    align-items: center;
+    width: 100%;
+    height: 100%;
+    background-color: var(--modal-bg);
+    display: flex;
     justify-content: center;
+    align-items: center;
     z-index: 1000;
-}
-#modal-backdrop.visible {
-    display: flex;
-}
-#modal-content {
-    background-color: var(--modal-background);
-    padding: 24px;
-    border-radius: 16px;
-    width: 90%;
-    max-width: 400px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
-#modal-close-button {
+#modal-backdrop.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+#modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    transform: scale(0.95);
+    transition: transform 0.3s ease;
+}
+
+#modal-backdrop.visible #modal-content {
+    transform: scale(1);
+}
+
+.close-button {
     position: absolute;
-    top: 12px;
-    right: 12px;
+    top: 10px;
+    right: 10px;
     background: #eee;
     border: none;
-    width: 32px;
-    height: 32px;
     border-radius: 50%;
-    font-size: 1.5em;
-    line-height: 1;
+    width: 30px;
+    height: 30px;
+    font-size: 1.5rem;
+    line-height: 30px;
+    text-align: center;
     cursor: pointer;
     color: #888;
 }
@@ -182,94 +212,113 @@ html, body {
     height: 180px;
     object-fit: cover;
     border-radius: 8px;
-    background-color: #f0f0f0;
+    margin-bottom: 15px;
 }
 
 #modal-name {
-    margin: 0;
-    font-size: 1.5em;
-    font-weight: 700;
-    text-align: center;
+    margin: 0 0 10px 0;
+    font-size: 1.5rem;
 }
 
 #modal-description {
-    margin: 0;
-    color: #666;
-    text-align: center;
-    font-size: 0.9em;
+    font-size: 1rem;
+    color: var(--text-light);
+    margin-bottom: 20px;
+}
+
+.options-group, .quantity-group {
+    margin-bottom: 20px;
+}
+
+.options-group h3, .quantity-group h3 {
+    margin: 0 0 10px 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-light);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
 }
 
 #option-selector {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    justify-content: center;
+    gap: 10px;
+}
+
+/* This is the new part for each radio button item */
+#option-selector .option-item {
+    display: block; /* Make it a block to not interfere with flex */
 }
 
 #option-selector input[type="radio"] {
-    display: none;
+    display: none; /* Hide the default radio button */
 }
 
 #option-selector label {
+    display: inline-block;
     padding: 8px 16px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color);
     border-radius: 20px;
     cursor: pointer;
-    transition: all 0.2s;
-    font-size: 0.9em;
+    transition: all 0.2s ease-in-out;
+    font-size: 14px;
+    background-color: #f9f9f9;
 }
 
 #option-selector input[type="radio"]:checked + label {
     background-color: var(--primary-color);
     color: white;
     border-color: var(--primary-color);
-}
-
-.price-display {
-    text-align: center;
-    font-size: 1.2em;
     font-weight: 600;
 }
 
-.quantity-selector {
+.quantity-control {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 20px;
+    gap: 15px;
 }
 
-.quantity-selector button {
-    width: 40px;
-    height: 40px;
+.quantity-control button {
+    background-color: #eee;
+    border: none;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
-    border: 1px solid #ccc;
-    background-color: #f9f9f9;
-    font-size: 1.5em;
+    font-size: 1.2rem;
+    font-weight: bold;
     cursor: pointer;
-    color: var(--text-color);
 }
 
-.quantity-selector span {
-    font-size: 1.5em;
-    font-weight: 600;
-    min-width: 30px;
-    text-align: center;
+.quantity-control span {
+    font-size: 1.2rem;
+    font-weight: bold;
 }
 
-#add-to-cart-button {
+.modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.total-price {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--text-dark);
+}
+
+.add-to-cart-btn {
     background-color: var(--primary-color);
     color: white;
     border: none;
-    padding: 14px 20px;
-    border-radius: 28px;
-    font-size: 1.1em;
+    padding: 12px 25px;
+    border-radius: 25px;
+    font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.2s;
-    margin-top: 8px;
+    transition: background-color 0.2s ease;
 }
 
-#add-to-cart-button:hover {
-    background-color: var(--primary-dark);
+.add-to-cart-btn:hover {
+    background-color: var(--primary-color-dark);
 }
-
