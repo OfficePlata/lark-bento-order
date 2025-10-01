@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ステップ5で確定するLarkフォームの共有URLを設定
     const LARK_FORM_URL = "https://yjpw4ydvu698.jp.larksuite.com/share/base/form/shrjprndeQ1HbiZyHWfSXVgazTf";
     // --- 設定項目ここまで ---
-// グローバル変数
+    // グローバル変数
     let menuData = [];
     let cart = [];
     let currentItem = null;
@@ -193,8 +193,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            const profile = await liff.getProfile();
-            
+            const idToken = liff.getDecodedIDToken();
+            const userId = idToken.sub; // ユーザーID
+            const displayName = idToken.name; // 表示名
+
             let orderDetailsText = '';
             cart.forEach(item => {
                 orderDetailsText += `${item.name} (${item.option.name}) x ${item.quantity}\n`;
@@ -204,13 +206,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const fullOrderTextForMessage = `${orderDetailsText}\n合計金額: ${totalPrice}円`;
             localStorage.setItem('bentoOrderData', JSON.stringify({ text: fullOrderTextForMessage }));
 
-            // --- ▼▼▼ ここを修正しました ▼▼▼ ---
-            // 新しいフォームのHTMLソースから特定した、正しいフィールドIDに更新しました。
+            // --- ▼▼▼ 共有いただいたフィールドIDを正確に反映させました ▼▼▼ ---
             const params = new URLSearchParams();
-            params.set('fldYLRXpXN', profile.userId);        // 「LINEユーザーID」
-            params.set('fld9MWY8Pv', profile.displayName);   // 「LINE表示名」
-            params.set('flduAKumTJ', orderDetailsText.trim());// 「注文詳細」
-            params.set('fldY9IGZIs', totalPrice);            // 「合計金額」
+            params.set('fldYLRXpXN', userId);        // LINEユーザーID
+            params.set('fld9MWY8Pv', displayName);   // LINE表示名
+            params.set('flduAKumTJ', orderDetailsText.trim());// 注文詳細
+            params.set('fldY9IGZIs', totalPrice);            // 合計金額
             // --- ▲▲▲ ここまで修正 ▲▲▲ ---
 
             const finalUrl = `${LARK_FORM_URL}?${params.toString()}`;
