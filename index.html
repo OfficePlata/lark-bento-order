@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>お弁当注文</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -12,7 +12,7 @@
     </header>
 
     <main id="app-container">
-        <div id="loading-indicator">読み込み中...</div>
+        <div id="loading-indicator">メニューを読み込んでいます...</div>
         <div id="menu-container" class="grid-container">
             <!-- メニューアイテムはここに動的に挿入されます -->
         </div>
@@ -28,7 +28,7 @@
     <!-- 商品詳細モーダル -->
     <div id="modal-backdrop">
         <div id="modal-content">
-            <button id="modal-close-button">&times;</button>
+            <button id="modal-close-button" aria-label="閉じる">&times;</button>
             <img id="modal-image" src="" alt="商品画像">
             <h2 id="modal-name"></h2>
             <p id="modal-description"></p>
@@ -37,18 +37,16 @@
                 価格: ¥<span id="modal-price">0</span>
             </div>
             <div class="quantity-selector">
-                <button id="decrease-qty">-</button>
+                <button id="decrease-qty" aria-label="減らす">-</button>
                 <span id="quantity">1</span>
-                <button id="increase-qty">+</button>
+                <button id="increase-qty" aria-label="増やす">+</button>
             </div>
             <button id="add-to-cart-button">カートに追加</button>
         </div>
     </div>
 
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <!-- ▼▼▼ 読み込むファイル名をapp-v2.jsに変更しました ▼▼▼ -->
-    <script src="app-v2.js"></script>
-    <!-- ▲▲▲ ここが重要です ▲▲▲ -->
+    <script src="app.js"></script>
 </body>
 </html>
 
