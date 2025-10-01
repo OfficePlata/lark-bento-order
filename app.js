@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // 【重要】デプロイしたGASのURLをここに設定してください
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbycojkigarNHIAO8xNZms9dR95K31zE2jXpSFUc2FVIFULMFqM9_LdRTM9DeIofuuVK/exec";
     // --- ▲▲▲ 最終設定項目 ▲▲▲ ---
-
     // (これより下の部分は変更不要です)
     let menuData = [];
     let cart = [];
@@ -29,6 +28,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
     async function fetchMenuData() {
+        // --- ▼▼▼ デバッグ機能を追加しました ▼▼▼ ---
+        // アプリが開かれた瞬間に、どのGAS URLを読み込んでいるかアラートで表示します。
+        alert("Connecting to GAS URL:\n" + GAS_API_URL);
+        // --- ▲▲▲ デバッグ機能ここまで ▲▲▲ ---
+
         if (GAS_API_URL === "YOUR_FINAL_GAS_URL_HERE") {
             loadingIndicator.textContent = "GAS_API_URLが設定されていません。";
             return;
@@ -151,11 +155,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // --- ▼▼▼ ユーザー様の情報に基づき、liff.getProfile() を使用するよう修正しました ▼▼▼ ---
             const profile = await liff.getProfile();
             const userId = profile.userId;
             const displayName = profile.displayName;
-            // --- ▲▲▲ 修正ここまで ▲▲▲ ---
 
             let orderDetailsText = '';
             cart.forEach(item => {
