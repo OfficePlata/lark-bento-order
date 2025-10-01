@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // --- 設定項目 ---
     const MAIN_LIFF_ID = "2008199273-3ogv1YME"; 
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyAL3Ctz_nZ4Ca5lfVJeO7_HaUTHSp5iRth1R2ypCIKiC0Ctq99OSj8HsmhdIFz6B2m/exec";
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzrA09SgIJGah9w8aur7AlX68sJJP565Diurkb1Vz1om5d5C6CC-It5k_Ua2lCR_WD9/exec";
     // --- 設定項目ここまで ---
 
     // グローバル変数
