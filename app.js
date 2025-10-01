@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // ステップ5で確定するLarkフォームの共有URLを設定
     const LARK_FORM_URL = "https://yjpw4ydvu698.jp.larksuite.com/share/base/form/shrjprndeQ1HbiZyHWfSXVgazTf";
     // --- 設定項目ここまで ---
-
     // グローバル変数
     let menuData = [];
     let cart = [];
@@ -184,22 +183,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if (cart.length === 0) return;
 
         try {
-            // LIFFがLINEクライアント内で実行されているか確認
             if (!liff.isInClient()) {
-                // 開発中のPCでのテストを考慮した、より丁寧なメッセージに変更
                 alert("この機能はLINEアプリ内でのみ利用可能です。\nPCでテストしている場合、このメッセージが表示されるのは正常な動作です。\n実際の動作は、スマートフォンにURLを送ってご確認ください。");
                 return;
             }
-
-            // ログイン状態を確認
             if (!liff.isLoggedIn()) {
-                // ログインしていない場合は、ログインを促す
                 alert("LINEログインが必要です。\nOKを押すとログインします。");
                 liff.login();
-                return; // liff.login()はページをリダイレクトさせるので、ここで処理を中断
+                return;
             }
             
-            // ログイン済みの場合、プロフィールを取得
             const profile = await liff.getProfile();
             
             let orderDetailsText = '';
@@ -212,12 +205,12 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.setItem('bentoOrderData', JSON.stringify({ text: fullOrderTextForMessage }));
 
             // --- ▼▼▼ ここを修正しました ▼▼▼ ---
-            // URLパラメータを、日本語の項目名からLarkフォーム固有のフィールドIDに変更
+            // あなたのLarkフォームに合わせて、正しいフィールドIDを設定しました。
             const params = new URLSearchParams();
-            params.set('fldS3gP5O2', orderDetailsText.trim()); // ご注文内容
-            params.set('fldnY5nS4R', totalPrice);             // 合計金額
-            params.set('fldG7V4s2n', profile.userId);         // LINEユーザーID
-            params.set('fldxqy5nOt', profile.displayName);    // LINE表示名
+            params.set('fldG7V4s2n', profile.userId);         // 「LINEユーザーID」のフィールドID
+            params.set('fldxqy5nOt', profile.displayName);    // 「LINE表示名」のフィールドID
+            params.set('fldS3gP5O2', orderDetailsText.trim()); // 「注文詳細」のフィールドID
+            params.set('fldnY5nS4R', totalPrice);             // 「合計金額」のフィールドID
             // --- ▲▲▲ ここまで修正 ▲▲▲ ---
 
             const finalUrl = `${LARK_FORM_URL}?${params.toString()}`;
@@ -238,4 +231,3 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     confirmOrderButton.addEventListener('click', confirmOrderAndRedirect);
 });
-
