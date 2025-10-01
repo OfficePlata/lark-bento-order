@@ -150,14 +150,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 return; 
             }
             
-            let userId, displayName;
-            try {
-                const profile = await liff.getProfile();
-                userId = profile.userId;
-                displayName = profile.displayName;
-            } catch (profileError) {
-                throw new Error(`LINEプロファイルの取得に失敗しました。LIFFアプリに 'profile' の権限があるか確認してください。\nError: ${profileError.message}`);
-            }
+            const profile = await liff.getProfile();
+            const userId = profile.userId;
+            const displayName = profile.displayName;
 
             let orderDetailsText = '';
             cart.forEach(item => {
@@ -167,15 +162,21 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const confirmationMessage = `ご注文ありがとうございます！\n\n---ご注文内容---\n${orderDetailsText.trim()}\n\n合計金額: ${totalPrice}円\n\nご注文を受け付けました。準備ができましたら、改めてご連絡いたします。`;
 
+            // --- ▼▼▼ ここを修正しました (ご提示のロジックを反映) ▼▼▼ ---
             try {
-                if (liff.isInClient() && liff.isApiAvailable('sendMessages')) {
+                // liff.sendMessagesが利用可能かチェック
+                if (liff.isApiAvailable('sendMessages')) {
                     await liff.sendMessages([{ type: 'text', text: confirmationMessage }]);
                 } else {
+                    // LINEクライアント外、またはAPIが利用不可の場合はコンソールに警告を出す
                     console.warn('LINEメッセージは送信されません (LINEクライアント外、またはAPIが利用不可)');
                 }
             } catch (messageError) {
-                 throw new Error(`LINEメッセージの送信に失敗しました。LIFFアプリに 'chat_message.write' の権限があるか確認してください。\nError: ${messageError.message}`);
+                // メッセージ送信に失敗した場合のエラーハンドリング
+                console.error(`LINEメッセージの送信に失敗しました。Error: ${messageError.message}`);
+                // 注文処理は続行するため、ここではエラーをスローしない
             }
+            // --- ▲▲▲ 修正ここまで ▲▲▲ ---
 
             const orderId = new Date().getTime().toString() + Math.random().toString(36).substring(2, 8);
             const orderDate = new Date().toLocaleDateString('ja-JP');
