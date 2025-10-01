@@ -151,9 +151,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            const idToken = liff.getDecodedIDToken();
-            const userId = idToken.sub;
-            const displayName = idToken.name;
+            // --- ▼▼▼ ユーザー様の情報に基づき、liff.getProfile() を使用するよう修正しました ▼▼▼ ---
+            const profile = await liff.getProfile();
+            const userId = profile.userId;
+            const displayName = profile.displayName;
+            // --- ▲▲▲ 修正ここまで ▲▲▲ ---
 
             let orderDetailsText = '';
             cart.forEach(item => {
@@ -201,4 +203,3 @@ document.addEventListener('DOMContentLoaded', function() {
     modalBackdrop.addEventListener('click', (e) => { if (e.target === modalBackdrop) closeModal(); });
     confirmOrderButton.addEventListener('click', submitOrder);
 });
-
