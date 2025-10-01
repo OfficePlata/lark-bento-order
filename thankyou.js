@@ -11,11 +11,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     liff.init({ liffId: THANK_YOU_LIFF_ID })
         .then(() => {
+            console.log("Thank you page LIFF initialized.");
             sendConfirmationMessage();
         })
         .catch((err) => {
             console.error("LIFF initialization failed for thank you page.", err);
-            alert('エラーが発生しました。LIFFの初期化に失敗しました。');
+            document.body.innerHTML = `<h1>LIFF初期化エラー</h1><p>LINEクライアントで開いているか、LIFF IDが正しいか確認してください。</p><p>${err}</p>`;
         });
 });
 
@@ -23,8 +24,8 @@ async function sendConfirmationMessage() {
     // 1. localStorageから注文情報を取得
     const storedData = localStorage.getItem('bentoOrderData');
     if (!storedData) {
-        console.warn("No order data found in localStorage.");
-        // データがない場合でも、ユーザー体験のためにウィンドウを閉じる
+        console.error("localStorageから注文情報が見つかりませんでした。");
+        // データがない場合でもウィンドウを閉じる
         if (liff.isInClient()) {
             liff.closeWindow();
         }
@@ -33,12 +34,14 @@ async function sendConfirmationMessage() {
 
     try {
         const orderData = JSON.parse(storedData);
+        console.log("Retrieved order data:", orderData);
         
         // 2. 送信するメッセージを組み立てる
         const message = `ご注文を受け付けました。\n\n---ご注文内容---\n${orderData.text}\n\nお作りして準備ができましたら、改めてご連絡いたします。`;
 
         // 3. liff.sendMessages() を使ってメッセージを送信
-        if (liff.isInClient() && liff.isApiAvailable('shareTargetPicker')) {
+        // ▼▼▼ APIのチェックをより適切な'sendMessages'に変更しました ▼▼▼
+        if (liff.isInClient() && liff.isApiAvailable('sendMessages')) {
              await liff.sendMessages([
                 {
                     type: 'text',
@@ -46,22 +49,19 @@ async function sendConfirmationMessage() {
                 }
             ]);
             console.log('Message sent successfully.');
-            // 送信成功後、localStorageのデータを削除
-            localStorage.removeItem('bentoOrderData');
-            // LIFFウィンドウを閉じる
-            liff.closeWindow();
         } else {
-            console.log('User is not in LINE client or sendMessages is not available.');
-             // LINEクライアント外でも、localStorageをクリアして閉じる試み
-            localStorage.removeItem('bentoOrderData');
-            if(liff.isInClient()) liff.closeWindow();
+            console.warn('User is not in LINE client or sendMessages is not available.');
         }
     } catch (error) {
         console.error('Failed to send message:', error);
         alert('メッセージの送信に失敗しました。');
-        // エラーが発生してもウィンドウは閉じる
+    } finally {
+        // 成功・失敗にかかわらず、localStorageのデータを削除してLIFFウィンドウを閉じる
+        console.log("Cleaning up and closing window.");
         localStorage.removeItem('bentoOrderData');
-        if(liff.isInClient()) liff.closeWindow();
+        if (liff.isInClient()) {
+            liff.closeWindow();
+        }
     }
 }
 
