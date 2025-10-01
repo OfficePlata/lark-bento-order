@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- ▼▼▼ 最終設定項目 ▼▼▼ ---
     const MAIN_LIFF_ID = "2008199273-3ogv1YME";
     // 【重要】デプロイしたGASのURLをここに設定してください
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyH7cAZW8jOUX_io8NEDuQ3xJgHCyJZarIU_Mkb7Vsus26p9cXdnhR4qEJfL4ZEJ3ey/exec";
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzhB4RmJU8tiQ-etpSIeZklM6R0uBdL4rLfupoL_Ax9wxc_bNdUepLcSw8dWeNEcraW/exec";
     // --- ▲▲▲ 最終設定項目 ▲▲▲ ---
 
     // 【追加】モバイルデバッグ用のログ表示エリア
