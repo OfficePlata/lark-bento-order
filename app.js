@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ステップ5で確定するLarkフォームの共有URLを設定
     const LARK_FORM_URL = "https://yjpw4ydvu698.jp.larksuite.com/share/base/form/shrjprndeQ1HbiZyHWfSXVgazTf";
     // --- 設定項目ここまで ---
-    // グローバル変数
+// グローバル変数
     let menuData = [];
     let cart = [];
     let currentItem = null;
@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const options = [
             { key: 'regular', name: '普通盛り', price: item.price_regular },
             { key: 'large', name: '大盛り', price: item.price_large },
-            { key: 'small', name: '小盛り', price: item.price_small },
+            { key: 'small', name: '小盛り', price: item.price_side_only },
             { key: 'side_only', name: 'おかずのみ', price: item.price_side_only },
         ];
         
@@ -205,12 +205,12 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.setItem('bentoOrderData', JSON.stringify({ text: fullOrderTextForMessage }));
 
             // --- ▼▼▼ ここを修正しました ▼▼▼ ---
-            // あなたのLarkフォームに合わせて、正しいフィールドIDを設定しました。
+            // 新しいフォームのHTMLソースから特定した、正しいフィールドIDに更新しました。
             const params = new URLSearchParams();
-            params.set('fldG7V4s2n', profile.userId);         // 「LINEユーザーID」のフィールドID
-            params.set('fldxqy5nOt', profile.displayName);    // 「LINE表示名」のフィールドID
-            params.set('fldS3gP5O2', orderDetailsText.trim()); // 「注文詳細」のフィールドID
-            params.set('fldnY5nS4R', totalPrice);             // 「合計金額」のフィールドID
+            params.set('fldYLRXpXN', profile.userId);        // 「LINEユーザーID」
+            params.set('fld9MWY8Pv', profile.displayName);   // 「LINE表示名」
+            params.set('flduAKumTJ', orderDetailsText.trim());// 「注文詳細」
+            params.set('fldY9IGZIs', totalPrice);            // 「合計金額」
             // --- ▲▲▲ ここまで修正 ▲▲▲ ---
 
             const finalUrl = `${LARK_FORM_URL}?${params.toString()}`;
@@ -231,3 +231,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     confirmOrderButton.addEventListener('click', confirmOrderAndRedirect);
 });
+
