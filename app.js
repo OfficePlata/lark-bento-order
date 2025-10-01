@@ -1,11 +1,9 @@
 document.addEventListener('DOMContentLoaded', function() {
     // --- 設定項目 ---
-    // ステップ3で取得した「メイン注文用」のLIFF IDを設定
-    const MAIN_LIFF_ID = "2008199273-3ogv1YME";
-    // ステップ2で取得したGASのウェブアプリURLを設定
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyfa5MloSmfy15CqXLxvlhzVnjV75Ghx4uV3RE1gqfD-VSq3Cwan_wShv0r1FFLV7uw/exec";
-    // ステップ5で確定するLarkフォームの共有URLを設定
-    const LARK_FORM_URL = "https://yjpw4ydvu698.jp.larksuite.com/share/base/form/shrjprndeQ1HbiZyHWfSXVgazTf";
+    const MAIN_LIFF_ID = "2008199273-3ogv1YME"; 
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyAL3Ctz_nZ4Ca5lfVJeO7_HaUTHSp5iRth1R2ypCIKiC0Ctq99OSj8HsmhdIFz6B2m/exec";
+    // --- 設定項目ここまで ---
+
     // グローバル変数
     let menuData = [];
     let cart = [];
@@ -15,7 +13,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const loadingIndicator = document.getElementById('loading-indicator');
     const menuContainer = document.getElementById('menu-container');
     const modalBackdrop = document.getElementById('modal-backdrop');
-    const modalContent = document.getElementById('modal-content');
     const confirmOrderButton = document.getElementById('confirm-order-button');
     const addToCartButton = document.getElementById('add-to-cart-button');
     const modalCloseButton = document.getElementById('modal-close-button');
@@ -38,6 +35,9 @@ document.addEventListener('DOMContentLoaded', function() {
     async function fetchMenuData() {
         try {
             const response = await fetch(GAS_API_URL);
+            if (!response.ok) {
+                throw new Error(`Network response was not ok, status: ${response.status}`);
+            }
             menuData = await response.json();
             if (menuData.error) {
                 throw new Error(menuData.error);
@@ -176,18 +176,21 @@ document.addEventListener('DOMContentLoaded', function() {
         confirmOrderButton.disabled = cart.length === 0;
     }
 
-    
-    // 注文確定処理
-    async function confirmOrderAndRedirect() {
+    // ▼▼▼ 注文確定処理を全面的に書き換えました ▼▼▼
+    async function submitOrder() {
         if (cart.length === 0) return;
+
+        confirmOrderButton.disabled = true;
+        confirmOrderButton.textContent = '注文処理中...';
 
         try {
             if (!liff.isLoggedIn()) {
-                alert("LINEログインが必要です。\nOKを押すとログインします。");
+                alert("LINEログインが必要です。OKを押すとログインします。");
                 liff.login();
                 return;
             }
             
+            // 1. 注文データとLINEへの返信メッセージを作成
             const idToken = liff.getDecodedIDToken();
             const userId = idToken.sub;
             const displayName = idToken.name;
@@ -198,35 +201,61 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             const totalPrice = cart.reduce((sum, item) => sum + item.totalPrice, 0);
             
-            const fullOrderTextForMessage = `${orderDetailsText}\n合計金額: ${totalPrice}円`;
-            localStorage.setItem('bentoOrderData', JSON.stringify({ text: fullOrderTextForMessage }));
+            const confirmationMessage = `ご注文ありがとうございます！\n\n---ご注文内容---\n${orderDetailsText.trim()}\n\n合計金額: ${totalPrice}円\n\nご注文を受け付けました。準備ができましたら、改めてご連絡いたします。`;
 
-            const params = new URLSearchParams();
-            params.set('fldYLRXpXN', userId);
-            params.set('fld9MWY8Pv', displayName);
-            params.set('flduAKumTJ', orderDetailsText.trim());
-            params.set('fldY9IGZIs', totalPrice);
+            // 2. LINEに確認メッセージを送信
+            if (liff.isInClient() && liff.isApiAvailable('sendMessages')) {
+                await liff.sendMessages([{ type: 'text', text: confirmationMessage }]);
+            } else {
+                console.warn('LINEメッセージを送信できません。LINEクライアント外か、APIが利用できません。');
+            }
 
-            const finalUrl = `${LARK_FORM_URL}?${params.toString()}`;
+            // 3. Lark Baseに送信するデータを作成
+            const orderId = new Date().getTime().toString() + Math.random().toString(36).substring(2, 8);
+            const orderDate = new Date().toLocaleDateString('ja-JP');
 
-            // --- ▼▼▼ ここを修正しました ▼▼▼ ---
-            // 外部ブラウザではなく、同じLIFFウィンドウ内でページを遷移させます。
-            // これにより、localStorageの情報がthankyou.htmlに引き継がれるようになります。
-            window.location.assign(finalUrl);
-            // --- ▲▲▲ ここまで修正 ▲▲▲ ---
+            const payload = {
+                fldYjlldjn: orderId,
+                fldYLRXpXN: userId,
+                fld9MWY8Pv: displayName,
+                fldqDpai9t: displayName,
+                flduAKumTJ: orderDetailsText.trim(),
+                fldY9IGZIs: totalPrice,
+                fld1Yss0c8: orderDate,
+                fldsOifcR8: '', // 顧客種別（LIFFから取得不可）
+                fldBX4rdNx: '', // 配達時間（LIFFから取得不可）
+                fldpFFSOo2: '', // 配達先住所（LIFFから取得不可）
+            };
+
+            // 4. GASにPOSTリクエストを送信してLark Baseに書き込む
+            const response = await fetch(GAS_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload),
+                mode: 'cors' 
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                alert('ご注文が完了しました。');
+                liff.closeWindow();
+            } else {
+                throw new Error(result.message || 'Lark Baseへの書き込みに失敗しました。');
+            }
 
         } catch (error) {
-            console.error('Failed to process order:', error);
-            alert('処理中にエラーが発生しました。もう一度お試しください。');
+            console.error('注文処理中にエラーが発生しました:', error);
+            alert(`注文処理中にエラーが発生しました。\n${error.message}\nお手数ですが、お店に直接ご連絡ください。`);
+            confirmOrderButton.disabled = false;
+            confirmOrderButton.textContent = '注文を確定する';
         }
     }
     
-
     // イベントリスナー設定
     modalCloseButton.addEventListener('click', closeModal);
     modalBackdrop.addEventListener('click', (e) => {
         if (e.target === modalBackdrop) closeModal();
     });
-    confirmOrderButton.addEventListener('click', confirmOrderAndRedirect);
+    confirmOrderButton.addEventListener('click', submitOrder);
 });
-
