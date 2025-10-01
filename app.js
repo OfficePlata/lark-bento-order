@@ -1,9 +1,9 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // --- ▼▼▼ 設定項目 ▼▼▼ ---
-    const MAIN_LIFF_ID = "2008199273-3ogv1YME"; 
-    // 【重要】前回正常に接続できたGASのURLをここに設定してください
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzyxB8UetPhmAvicPBy4KF2H2lbc3mV3iWi0u7thX7314eWvYTqY6OdH55wVsUfFo5Q/exec";
-    // --- ▲▲▲ 設定項目 ▲▲▲ ---
+    // --- ▼▼▼ 最終設定項目 ▼▼▼ ---
+    const MAIN_LIFF_ID = "2008199273-3ogv1YME"; // あなたのメイン注文用LIFF ID
+    // 【最重要】ステップ2で取得する「最後の新しいGAS URL」をここに貼り付けてください
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxUnPklomhODN1bSBTOdaEF7eXYLTTUF_mGUrrXssC8W_tjOTqZXLt_fYbkZH2H44dx/exec";
+    // --- ▲▲▲ 最終設定項目 ▲▲▲ ---
 
     // (これより下の部分は変更不要です)
     let menuData = [];
@@ -23,17 +23,30 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log("LIFF initialized.");
             fetchMenuData();
         })
-        .catch((err) => { console.error("LIFF init failed.", err); });
+        .catch((err) => { 
+            console.error("LIFF init failed.", err);
+            loadingIndicator.textContent = "LIFF初期化失敗";
+        });
 
     async function fetchMenuData() {
+        if (GAS_API_URL === "YOUR_FINAL_GAS_URL_HERE") {
+            loadingIndicator.textContent = "GAS_API_URLが設定されていません。";
+            return;
+        }
         try {
             const response = await fetch(GAS_API_URL);
+            if (!response.ok) {
+                throw new Error(`サーバー応答エラー: ${response.status}`);
+            }
             menuData = await response.json();
+            if (menuData.error) {
+                throw new Error(menuData.error);
+            }
             displayMenu(menuData);
             loadingIndicator.style.display = 'none';
         } catch (error) {
             console.error("Fetch menu failed:", error);
-            loadingIndicator.textContent = "メニュー読込失敗";
+            loadingIndicator.textContent = `メニュー読込失敗: ${error.message}`;
         }
     }
 
@@ -134,7 +147,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             if (!liff.isLoggedIn()) {
-                alert("LINEログインが必要です。OKを押すとログインします。");
                 liff.login();
                 return;
             }
