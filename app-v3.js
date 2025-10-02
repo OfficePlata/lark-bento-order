@@ -2,7 +2,7 @@
     // --- ▼▼▼ 最終設定項目 ▼▼▼ ---
     const MAIN_LIFF_ID = "2008199273-3ogv1YME";
     // 【重要】デプロイしたGASのURLをここに設定してください
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbz2NwKKzMTRHALP5Ue6__YLCdmThoN4z6d9_o2mzYez2HxTFvBmg7leanHKQ-zVKn1L/exec";
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyiE9U28j-lQgrgYMfD3nV0JbFNAULBvw6sOLTijfGEUxRK3s8C6dPiwKYXAvIsTAF3/exec";
     // --- ▲▲▲ 最終設定項目 ▲▲▲ ---
 
     // 【追加】モバイルデバッグ用のログ表示エリア
