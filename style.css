@@ -23,6 +23,28 @@ body {
     color: #333;
     margin: 0;
 }
+header {
+    background-color: white;
+    padding: 1rem;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+/* ★★★ エラーボックスのスタイルを追加 ★★★ */
+#system-check {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+.error-box {
+    color: #c5221f;
+    background-color: #fce8e6;
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: left;
+    line-height: 1.5;
+}
 
 /* メニューグリッド */
 .menu-grid {
