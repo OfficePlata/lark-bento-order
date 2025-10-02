@@ -1,76 +1,53 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>らくらくキッチン 注文アプリ</title>
-    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>らくらく弁当 注文アプリ</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <h1>らくらくキッチン 注文アプリ</h1>
-        <!-- ★★★ システム自己診断結果表示エリアを追加 ★★★ -->
-        <div id="system-check"></div>
-    </header>
+  <div id="loading" class="loading-overlay">
+    <div class="spinner"></div>
+    <p>読み込み中...</p>
+  </div>
 
-    <main>
-        <div id="loading-indicator">
-            <div class="spinner"></div>
-            <p>メニューを読み込んでいます...</p>
-        </div>
-        <div id="menu-container" class="menu-grid">
-            <!-- メニューはJavaScriptでここに挿入されます -->
-        </div>
-    </main>
+  <header class="app-header">
+    <h1>らくらく弁当 注文アプリ</h1>
+  </header>
 
-    <footer>
-        <button id="show-cart-button" class="cart-button" disabled>
-            <span id="cart-item-count">0</span>点 / 合計 ¥<span id="cart-total-price">0</span>
-            <span>カートを見る</span>
-        </button>
-    </footer>
+  <main id="app-main">
+    <div id="menu-container" class="menu-grid">
+      </div>
+  </main>
 
-    <!-- 商品詳細モーダル -->
-    <div id="item-modal-backdrop" class="modal-backdrop">
-        <div class="modal-content">
-            <button id="close-item-modal-button" class="modal-close-button">&times;</button>
-            <img id="modal-image" src="" alt="商品画像">
-            <h2 id="modal-name"></h2>
-            <p id="modal-description"></p>
-            <div id="option-selector" class="option-selector"></div>
-            <div class="quantity-selector">
-                <button id="decrease-qty">-</button>
-                <span id="quantity">1</span>
-                <button id="increase-qty">+</button>
-            </div>
-            <button id="add-to-cart-button" class="primary-button">
-                <span>カートに追加</span>
-                <span>¥<span id="modal-price">0</span></span>
-            </button>
-        </div>
+  <footer id="cart-footer" class="cart-footer">
+    <button id="view-cart-button" class="view-cart-button" disabled>
+      🛒 カートを見る (<span id="cart-item-count">0</span>)
+    </button>
+    <div class="total-price-display">
+      合計: ¥<span id="cart-total-price">0</span>
     </div>
-    
-    <!-- カート確認モーダル -->
-    <div id="cart-modal-backdrop" class="modal-backdrop">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>注文内容の確認</h2>
-                <button id="close-cart-modal-button" class="modal-close-button">&times;</button>
-            </div>
-            <div id="cart-summary-list" class="cart-summary-list"></div>
-            <div class="cart-summary-total">
-                <span>合計金額</span>
-                <span id="cart-summary-total-price">¥0</span>
-            </div>
-            <div class="modal-footer">
-                <button id="close-cart-button" class="secondary-button">買い物を続ける</button>
-                <button id="confirm-order-button" class="primary-button">注文を確定する</button>
-            </div>
+  </footer>
+
+  <div id="cart-modal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>注文内容の確認</h2>
+        <button id="close-cart-modal" class="close-button">&times;</button>
+      </div>
+      <div id="cart-items-container" class="cart-items-container">
         </div>
+      <div class="modal-footer">
+        <div class="cart-summary-total">
+          <strong>合計金額:</strong> ¥<span id="cart-modal-total-price">0</span>
+        </div>
+        <button id="submit-order-button" class="submit-button">注文を確定する</button>
+      </div>
     </div>
-    
-    <script src="app-v3.js" defer></script>
+  </div>
+
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
-
