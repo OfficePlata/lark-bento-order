@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', initializeApp);
 
 // --- ▼▼▼ 設定項目 ▼▼▼ ---
 const LIFF_ID = "2008199273-3ogv1YME"; // ご自身のLIFF IDに書き換えてください
-const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxuAfe8aumpDo4JUSaWcVlr6QWVmOnjWW2RK48it9OuEJPK_1uXpFu_eFuBQjGJfjPU/exec"; // ご自身のGAS URLに書き換えてください
+const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxiBqWGuGsZIAvkEFOgWJkodL9lYngLYioboQf0BSj-PIrNb1GQBiWpG8QG9OHX47Q0/exec"; // ご自身のGAS URLに書き換えてください
 // --- ▲▲▲ 設定項目 ▲▲▲ ---
 
 // (グローバル変数、DOM要素キャッシュは変更なし)
