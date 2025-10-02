@@ -7,6 +7,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // 【追加】モバイルデバッグ用のログ表示エリア
     let debugLogArea = null;
     
+    // 【追加】モバイルデバッグ用のログ表示エリア
+    let debugLogArea = null;
+    
     function createDebugLogArea() {
         if (debugLogArea) return;
         
@@ -48,109 +51,181 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         document.body.appendChild(toggleButton);
     }
-
+    
     function debugLog(message) {
-        const timestamp = new Date().toLocaleTimeString('ja-JP');
-        const logMessage = `[${timestamp}] ${message}`;
-        console.log(logMessage);
+        console.log(message);
         
-        if (debugLogArea) {
-            debugLogArea.innerHTML += logMessage + '\n';
-            debugLogArea.scrollTop = debugLogArea.scrollHeight;
+        if (!debugLogArea) createDebugLogArea();
+        
+        const timestamp = new Date().toLocaleTimeString();
+        const logEntry = document.createElement('div');
+        logEntry.textContent = `[${timestamp}] ${message}`;
+        debugLogArea.appendChild(logEntry);
+        debugLogArea.scrollTop = debugLogArea.scrollHeight;
+        
+        // 最大100行まで保持
+        while (debugLogArea.children.length > 100) {
+            debugLogArea.removeChild(debugLogArea.firstChild);
         }
     }
 
-    // アプリケーション開始
+    // 【追加】エラーハンドリングの強化
+    window.addEventListener('error', function(e) {
+        debugLog(`❌ JavaScript Error: ${e.message} at ${e.filename}:${e.lineno}`);
+    });
+    
+    window.addEventListener('unhandledrejection', function(e) {
+        debugLog(`❌ Unhandled Promise Rejection: ${e.reason}`);
+    });
+
+    let menuData = [];
+    let cart = [];
+    let currentItem = null;
+    
+    // DOM要素の取得（DOMContentLoadedで実行）
+    let loadingIndicator, menuContainer, modalBackdrop, confirmOrderButton, addToCartButton, modalCloseButton, decreaseQtyButton, increaseQtyButton;
+
     debugLog("🚀 アプリケーション開始");
     debugLog(`📱 User Agent: ${navigator.userAgent}`);
     debugLog(`🌐 URL: ${window.location.href}`);
 
-    // デバッグエリアを作成
-    createDebugLogArea();
+    // 【修正】DOMContentLoadedイベントでDOM要素を取得し、イベントリスナーを設定
+    document.addEventListener('DOMContentLoaded', function() {
+        debugLog("📄 DOM読み込み完了");
+        
+        // DOM要素の取得
+        loadingIndicator = document.getElementById('loading-indicator');
+        menuContainer = document.getElementById('menu-container');
+        modalBackdrop = document.getElementById('modal-backdrop');
+        confirmOrderButton = document.getElementById('confirm-order-button');
+        addToCartButton = document.getElementById('add-to-cart-button');
+        modalCloseButton = document.getElementById('modal-close-button');
+        decreaseQtyButton = document.getElementById('decrease-qty');
+        increaseQtyButton = document.getElementById('increase-qty');
 
-    // グローバル変数
-    let cart = [];
-    let menuData = [];
-    let currentProduct = null;
+        debugLog("🔗 DOM要素取得完了");
 
-    // DOM要素の取得
-    const loadingIndicator = document.getElementById('loading-indicator');
-    const menuContainer = document.getElementById('menu-container');
-    const modalBackdrop = document.getElementById('modal-backdrop');
-    const modalContent = document.getElementById('modal-content');
-    const cartItemCount = document.getElementById('cart-item-count');
-    const cartTotalPrice = document.getElementById('cart-total-price');
-    const confirmOrderButton = document.getElementById('confirm-order-button');
+        // 【修正】イベントリスナーの設定
+        setupEventListeners();
 
-    // イベントリスナーの設定
+        // LIFF初期化
+        initializeLiff();
+    });
+
     function setupEventListeners() {
-        // モーダル関連
-        document.getElementById('modal-close-button').addEventListener('click', closeModal);
-        modalBackdrop.addEventListener('click', function(e) {
-            if (e.target === modalBackdrop) {
-                closeModal();
-            }
-        });
+        debugLog("🔗 イベントリスナー設定開始");
 
-        // 数量調整
-        document.getElementById('decrease-qty').addEventListener('click', function() {
-            const qtyElement = document.getElementById('quantity');
-            let qty = parseInt(qtyElement.textContent);
-            if (qty > 1) {
-                qty--;
-                qtyElement.textContent = qty;
-                updateModalPrice();
-            }
-        });
-
-        document.getElementById('increase-qty').addEventListener('click', function() {
-            const qtyElement = document.getElementById('quantity');
-            let qty = parseInt(qtyElement.textContent);
-            qty++;
-            qtyElement.textContent = qty;
-            updateModalPrice();
-        });
-
-        // カートに追加
-        document.getElementById('add-to-cart-button').addEventListener('click', addToCart);
-
-        // 注文確定
-        confirmOrderButton.addEventListener('click', submitOrder);
-
-        debugLog("✅ イベントリスナー設定完了");
-    }
-
-    // LIFF初期化
-    async function initializeLiff() {
-        try {
-            await liff.init({ liffId: MAIN_LIFF_ID });
-            debugLog("✅ LIFF初期化成功");
-            
-            debugLog(`🔐 ログイン状態: ${liff.isLoggedIn()}`);
-            debugLog(`📱 LIFFクライアント: ${liff.isInClient()}`);
-            debugLog(`🔧 LIFF OS: ${liff.getOS()}`);
-            debugLog(`📊 LIFF言語: ${liff.getLanguage()}`);
-            debugLog(`🎯 LIFF版本: ${liff.getVersion()}`);
-
-            if (!liff.isLoggedIn()) {
-                liff.login();
-                return;
-            }
-
-            await loadMenuData();
-        } catch (error) {
-            debugLog(`❌ LIFF初期化エラー: ${error.message}`);
-            showError('LIFF初期化に失敗しました。');
+        // 【修正】モーダル閉じるボタンのイベントリスナー
+        if (modalCloseButton) {
+            modalCloseButton.addEventListener('click', closeModal);
+            debugLog("✅ モーダル閉じるボタンのイベントリスナー設定完了");
+        } else {
+            debugLog("❌ モーダル閉じるボタンが見つかりません");
         }
+
+        // 【修正】モーダル背景クリックで閉じる機能
+        if (modalBackdrop) {
+            modalBackdrop.addEventListener('click', function(e) {
+                if (e.target === modalBackdrop) {
+                    debugLog("🛒 モーダル背景クリックで閉じる");
+                    closeModal();
+                }
+            });
+            debugLog("✅ モーダル背景クリックイベントリスナー設定完了");
+        } else {
+            debugLog("❌ モーダル背景要素が見つかりません");
+        }
+
+        // 【修正】注文確認ボタンのイベントリスナー
+        if (confirmOrderButton) {
+            confirmOrderButton.addEventListener('click', submitOrder);
+            debugLog("✅ 注文確認ボタンのイベントリスナー設定完了");
+        } else {
+            debugLog("❌ 注文確認ボタンが見つかりません");
+        }
+
+        // 数量調整ボタンのイベントリスナー
+        if (decreaseQtyButton) {
+            decreaseQtyButton.addEventListener('click', () => {
+                let qty = parseInt(document.getElementById('quantity').textContent, 10);
+                if (qty > 1) {
+                    document.getElementById('quantity').textContent = --qty;
+                    updateModalPrice();
+                }
+            });
+            debugLog("✅ 数量減少ボタンのイベントリスナー設定完了");
+        }
+
+        if (increaseQtyButton) {
+            increaseQtyButton.addEventListener('click', () => {
+                let qty = parseInt(document.getElementById('quantity').textContent, 10);
+                document.getElementById('quantity').textContent = ++qty;
+                updateModalPrice();
+            });
+            debugLog("✅ 数量増加ボタンのイベントリスナー設定完了");
+        }
+
+        // カートに追加ボタンのイベントリスナー
+        if (addToCartButton) {
+            addToCartButton.addEventListener('click', () => {
+                const selOptEl = document.querySelector('input[name="price_option"]:checked');
+                const qty = parseInt(document.getElementById('quantity').textContent, 10);
+                if (!currentItem || !selOptEl) return;
+                const selOpt = {
+                    key: selOptEl.value,
+                    name: document.querySelector(`label[for="opt_${selOptEl.value}"]`).textContent.split(' ')[0],
+                    price: parseInt(selOptEl.dataset.price, 10)
+                };
+                cart.push({ id: currentItem.id, name: currentItem.name, quantity: qty, option: selOpt, totalPrice: selOpt.price * qty });
+                debugLog(`🛒 カートに追加: ${currentItem.name} x ${qty}`);
+                updateCartView();
+                closeModal();
+            });
+            debugLog("✅ カートに追加ボタンのイベントリスナー設定完了");
+        }
+
+        debugLog("🔗 全イベントリスナー設定完了");
     }
 
-    // メニューデータの読み込み
-    async function loadMenuData() {
+    function initializeLiff() {
+        debugLog("🔄 LIFF初期化開始");
+        
+        liff.init({ liffId: MAIN_LIFF_ID })
+            .then(() => {
+                debugLog("✅ LIFF初期化成功");
+                debugLog(`🔐 ログイン状態: ${liff.isLoggedIn()}`);
+                debugLog(`📱 LIFFクライアント: ${liff.isInClient()}`);
+                debugLog(`🔧 LIFF OS: ${liff.getOS()}`);
+                debugLog(`📊 LIFF言語: ${liff.getLanguage()}`);
+                debugLog(`🎯 LIFF版本: ${liff.getVersion()}`);
+                
+                fetchMenuData();
+            })
+            .catch((err) => { 
+                debugLog(`❌ LIFF初期化失敗: ${err.message}`);
+                console.error("LIFF init failed.", err);
+                if (loadingIndicator) {
+                    loadingIndicator.textContent = "LIFF初期化失敗";
+                }
+            });
+    }
+
+    async function fetchMenuData() {
+        if (GAS_API_URL === "YOUR_FINAL_GAS_URL_HERE") {
+            debugLog("❌ GAS_API_URLが設定されていません");
+            if (loadingIndicator) {
+                loadingIndicator.textContent = "GAS_API_URLが設定されていません。";
+            }
+            return;
+        }
         try {
             debugLog(`📡 メニューデータ取得開始: ${GAS_API_URL}`);
-            
             const response = await fetch(GAS_API_URL);
             debugLog(`📡 メニュー取得レスポンス status: ${response.status}`);
+            
+            if (!response.ok) {
+                throw new Error(`サーバー応答エラー: ${response.status}`);
+            }
             
             const responseText = await response.text();
             debugLog(`📡 メニューレスポンステキスト長: ${responseText.length}文字`);
@@ -158,258 +233,275 @@ document.addEventListener('DOMContentLoaded', function() {
             menuData = JSON.parse(responseText);
             debugLog(`📡 パース済みメニューデータ: ${menuData.length}件`);
             
-            displayMenu();
+            if (menuData.error) {
+                throw new Error(menuData.error);
+            }
+            displayMenu(menuData);
+            if (loadingIndicator) {
+                loadingIndicator.style.display = 'none';
+            }
             debugLog("✅ メニュー表示完了");
         } catch (error) {
-            debugLog(`❌ メニュー取得エラー: ${error.message}`);
-            showError('メニューの読み込みに失敗しました。');
+            debugLog(`❌ メニュー取得失敗: ${error.message}`);
+            console.error("Fetch menu failed:", error);
+            if (loadingIndicator) {
+                loadingIndicator.textContent = `メニュー読込失敗: ${error.message}`;
+            }
         }
     }
 
-    // メニュー表示
-    function displayMenu() {
-        loadingIndicator.style.display = 'none';
+    function displayMenu(items) {
+        if (!menuContainer) {
+            debugLog("❌ メニューコンテナが見つかりません");
+            return;
+        }
+        
         menuContainer.innerHTML = '';
-
-        menuData.forEach(item => {
-            if (item.isAvailable) {
-                const menuItem = createMenuItemElement(item);
-                menuContainer.appendChild(menuItem);
-            }
+        items.forEach(item => {
+            const itemElement = document.createElement('div');
+            itemElement.className = 'grid-item';
+            itemElement.innerHTML = `
+                <img src="${item.imageUrl || 'https://placehold.co/300x240/eee/ccc?text=No+Image'}" alt="${item.name}">
+                <div class="item-info">
+                    <p class="item-name">${item.name}</p>
+                    <p class="item-price">¥${item.price_regular}</p>
+                </div>
+            `;
+            itemElement.addEventListener('click', () => openModal(item));
+            menuContainer.appendChild(itemElement);
         });
+        debugLog(`📋 メニュー表示完了: ${items.length}件`);
     }
 
-    // メニューアイテム要素の作成
-    function createMenuItemElement(item) {
-        const menuItem = document.createElement('div');
-        menuItem.className = 'menu-item';
-        menuItem.innerHTML = `
-            <img src="${item.imageUrl}" alt="${item.name}" class="menu-image">
-            <h3 class="menu-name">${item.name}</h3>
-            <p class="menu-price">¥${item.price_regular}</p>
-            <p class="menu-description">${item.description}</p>
-        `;
-
-        menuItem.addEventListener('click', () => openModal(item));
-        return menuItem;
-    }
-
-    // モーダル開く
     function openModal(item) {
         debugLog(`🛒 商品詳細モーダル開く: ${item.name}`);
-        currentProduct = item;
+        
+        if (!modalBackdrop) {
+            debugLog("❌ モーダル背景要素が見つかりません");
+            return;
+        }
+        
+        currentItem = item;
+        
+        // モーダル内容の設定
+        const modalName = document.getElementById('modal-name');
+        const modalDescription = document.getElementById('modal-description');
+        const modalImage = document.getElementById('modal-image');
+        
+        if (modalName) modalName.textContent = item.name;
+        if (modalDescription) modalDescription.textContent = item.description || '';
+        if (modalImage) modalImage.src = item.imageUrl || 'https://placehold.co/400x240/eee/ccc?text=No+Image';
 
-        document.getElementById('modal-image').src = item.imageUrl;
-        document.getElementById('modal-name').textContent = item.name;
-        document.getElementById('modal-description').textContent = item.description;
-
-        // オプション設定
+        // オプション選択肢の設定
         const optionSelector = document.getElementById('option-selector');
-        optionSelector.innerHTML = '';
-
-        const options = [
-            { name: '普通盛り', price: item.price_regular },
-            { name: '大盛り', price: item.price_large },
-            { name: '小盛り', price: item.price_small },
-            { name: 'おかずのみ', price: item.price_side_only }
-        ];
-
-        options.forEach((option, index) => {
-            const optionDiv = document.createElement('div');
-            optionDiv.className = 'option-item';
-            optionDiv.innerHTML = `
-                <input type="radio" id="option-${index}" name="option" value="${option.name}" data-price="${option.price}" ${index === 0 ? 'checked' : ''}>
-                <label for="option-${index}">${option.name} (¥${option.price})</label>
-            `;
-            optionSelector.appendChild(optionDiv);
-        });
-
-        // オプション変更時の価格更新
-        optionSelector.addEventListener('change', updateModalPrice);
-
-        // 数量リセット
-        document.getElementById('quantity').textContent = '1';
-
+        if (optionSelector) {
+            optionSelector.innerHTML = '';
+            const options = [
+                { key: 'regular', name: '普通盛り', price: item.price_regular },
+                { key: 'large', name: '大盛り', price: item.price_large },
+                { key: 'small', name: '小盛り', price: item.price_small },
+                { key: 'side_only', name: 'おかずのみ', price: item.price_side_only },
+            ];
+            options.forEach((opt, index) => {
+                if (opt.price !== undefined && opt.price !== null) {
+                    const checked = index === 0 ? 'checked' : '';
+                    optionSelector.innerHTML += `<div class="option-item"><input type="radio" id="opt_${opt.key}" name="price_option" value="${opt.key}" data-price="${opt.price}" ${checked}><label for="opt_${opt.key}">${opt.name} (¥${opt.price})</label></div>`;
+                }
+            });
+            
+            // オプション変更時のイベントリスナー設定
+            document.getElementsByName('price_option').forEach(r => r.addEventListener('change', updateModalPrice));
+        }
+        
+        // 数量を1にリセット
+        const quantityElement = document.getElementById('quantity');
+        if (quantityElement) {
+            quantityElement.textContent = '1';
+        }
+        
         updateModalPrice();
-        modalBackdrop.style.display = 'flex';
-        debugLog("🛒 モーダル表示設定完了");
+        
+        // 【修正】モーダル表示
+        modalBackdrop.classList.add('visible');
+        debugLog("✅ モーダル表示完了");
     }
 
-    // モーダル閉じる
     function closeModal() {
         debugLog("🛒 商品詳細モーダル閉じる");
-        modalBackdrop.style.display = 'none';
-        currentProduct = null;
-    }
-
-    // モーダル価格更新
-    function updateModalPrice() {
-        const selectedOption = document.querySelector('input[name="option"]:checked');
-        const quantity = parseInt(document.getElementById('quantity').textContent);
-        
-        if (selectedOption) {
-            const price = parseInt(selectedOption.dataset.price);
-            const totalPrice = price * quantity;
-            document.getElementById('modal-price').textContent = totalPrice;
+        if (modalBackdrop) {
+            modalBackdrop.classList.remove('visible');
+            debugLog("✅ モーダル非表示完了");
+        } else {
+            debugLog("❌ モーダル背景要素が見つかりません");
         }
     }
 
-    // カートに追加
-    function addToCart() {
-        const selectedOption = document.querySelector('input[name="option"]:checked');
-        const quantity = parseInt(document.getElementById('quantity').textContent);
-
-        if (!selectedOption || !currentProduct) return;
-
-        const cartItem = {
-            id: currentProduct.id,
-            name: currentProduct.name,
-            option: selectedOption.value,
-            price: parseInt(selectedOption.dataset.price),
-            quantity: quantity,
-            totalPrice: parseInt(selectedOption.dataset.price) * quantity
-        };
-
-        cart.push(cartItem);
-        debugLog(`🛒 カートに追加: ${cartItem.name} x ${cartItem.quantity}`);
+    function updateModalPrice() {
+        const selOpt = document.querySelector('input[name="price_option"]:checked');
+        const quantityElement = document.getElementById('quantity');
+        const modalPriceElement = document.getElementById('modal-price');
         
-        updateCartDisplay();
-        closeModal();
+        if (selOpt && quantityElement && modalPriceElement) {
+            const qty = parseInt(quantityElement.textContent, 10);
+            const price = parseInt(selOpt.dataset.price, 10) * qty;
+            modalPriceElement.textContent = price;
+            debugLog(`💰 モーダル価格更新: ¥${price}`);
+        }
     }
 
-    // カート表示更新
-    function updateCartDisplay() {
+    function updateCartView() {
         const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
         const totalPrice = cart.reduce((sum, item) => sum + item.totalPrice, 0);
-
-        cartItemCount.textContent = totalItems;
-        cartTotalPrice.textContent = totalPrice;
-        confirmOrderButton.disabled = totalItems === 0;
-
+        
+        const cartItemCountElement = document.getElementById('cart-item-count');
+        const cartTotalPriceElement = document.getElementById('cart-total-price');
+        
+        if (cartItemCountElement) cartItemCountElement.textContent = totalItems;
+        if (cartTotalPriceElement) cartTotalPriceElement.textContent = totalPrice;
+        
+        if (confirmOrderButton) {
+            confirmOrderButton.disabled = cart.length === 0;
+        }
+        
         debugLog(`🛒 カート更新: ${totalItems}点 / ${totalPrice}円`);
     }
 
-    // 注文送信（GETリクエストに変更）
+    // 【強化】submitOrder関数にモバイル対応デバッグを追加
     async function submitOrder() {
+        if (cart.length === 0) {
+            debugLog("❌ カートが空です");
+            return;
+        }
+        
         debugLog("🚀 注文処理開始");
         
-        try {
+        // ボタンを無効化してローディング状態にする
+        if (confirmOrderButton) {
             confirmOrderButton.disabled = true;
-            confirmOrderButton.textContent = '処理中...';
+            confirmOrderButton.textContent = '注文処理中...';
+        }
 
-            // ログイン状態確認
-            if (!liff.isLoggedIn()) {
-                throw new Error('ログインが必要です');
-            }
+        try {
+            // ログイン確認
             debugLog(`🔐 ログイン状態確認: ${liff.isLoggedIn()}`);
-
-            // ユーザープロフィール取得
+            if (!liff.isLoggedIn()) {
+                debugLog("❌ ユーザーがログインしていません。ログインページにリダイレクト");
+                liff.login();
+                return; 
+            }
+            
+            // ユーザー情報の取得
             debugLog("👤 ユーザープロフィール取得開始");
             const profile = await liff.getProfile();
-            debugLog(`👤 ユーザー情報取得成功: ${profile.displayName} (${profile.userId})`);
+            const userId = profile.userId;
+            const displayName = profile.displayName;
+            debugLog(`👤 ユーザー情報取得成功: ${displayName} (${userId})`);
 
-            // 注文データ準備
-            const orderId = Date.now().toString() + Math.random().toString(36).substr(2, 5);
-            const orderDetails = cart.map(item => 
-                `${item.name} (${item.option}) x ${item.quantity}`
-            ).join(', ');
+            // 注文詳細の準備
+            let orderDetailsText = '';
+            cart.forEach(item => {
+                orderDetailsText += `${item.name} (${item.option.name}) x ${item.quantity}\n`;
+            });
             const totalPrice = cart.reduce((sum, item) => sum + item.totalPrice, 0);
-
+            
+            // 注文データの準備（新しい形式）
             const orderData = {
-                orderId: orderId,
-                userId: profile.userId,
-                displayName: profile.displayName,
-                orderDetails: orderDetails,
+                orderId: new Date().getTime().toString() + Math.random().toString(36).substring(2, 8),
+                userId: userId,
+                displayName: displayName,
+                orderDetails: orderDetailsText.trim(),
                 totalPrice: totalPrice
             };
-
+            
             debugLog(`📦 送信する注文データ: ${JSON.stringify(orderData)}`);
 
-            // LINEメッセージ送信を試行（失敗しても続行）
-            try {
-                const message = `ご注文を承りました！\n\n注文ID: ${orderId}\n注文内容: ${orderDetails}\n合計金額: ¥${totalPrice}`;
-                await liff.sendMessages([{
-                    type: 'text',
-                    text: message
-                }]);
-                debugLog("📱 LINEメッセージ送信成功");
-            } catch (messageError) {
-                debugLog(`⚠️ LINEメッセージの送信に失敗しましたが、注文は正常に処理されました: ${messageError.message}`);
-            }
+            // LINEメッセージ送信（可能な場合のみ）
+            await sendLineMessageIfPossible(orderData);
 
-            // GASにGETリクエストでデータ送信（POSTからGETに変更）
+            // GASへのリクエスト送信
             debugLog(`📡 GASにリクエスト送信開始: ${GAS_API_URL}`);
             
-            const params = new URLSearchParams({
-                action: 'order',
-                orderId: orderData.orderId,
-                userId: orderData.userId,
-                displayName: orderData.displayName,
-                orderDetails: orderData.orderDetails,
-                totalPrice: orderData.totalPrice.toString()
-            });
-
-            const requestUrl = `${GAS_API_URL}?${params.toString()}`;
-            debugLog(`📡 リクエストURL: ${requestUrl}`);
-
-            debugLog("📡 fetch実行開始...");
-            const response = await fetch(requestUrl);
-            debugLog("📡 fetch実行完了");
+            const fetchOptions = {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(orderData)
+            };
             
+            debugLog(`📡 送信オプション: ${JSON.stringify(fetchOptions)}`);
+            
+            const response = await fetch(GAS_API_URL, fetchOptions);
             debugLog(`📡 GASレスポンス status: ${response.status}`);
             
-            debugLog("📡 レスポンステキスト取得開始...");
-            const responseText = await response.text();
-            debugLog("📡 レスポンステキスト取得完了");
-            
-            debugLog(`📡 GASレスポンステキスト: ${responseText}`);
-
             if (!response.ok) {
-                throw new Error(`GASレスポンスエラー: ${response.status}`);
+                throw new Error(`サーバー応答エラー: ${response.status} ${response.statusText}`);
             }
-
-            const result = JSON.parse(responseText);
             
-            if (result.status === 'success') {
-                debugLog("✅ 注文処理成功");
+            const responseText = await response.text();
+            debugLog(`📡 GASレスポンステキスト: ${responseText}`);
+            
+            let result;
+            try {
+                result = JSON.parse(responseText);
+            } catch (parseError) {
+                debugLog(`❌ JSON解析エラー: ${parseError.message}`);
+                debugLog(`📡 生レスポンス: ${responseText}`);
+                throw new Error(`レスポンス解析失敗: ${parseError.message}`);
+            }
+            
+            debugLog(`📡 解析済みレスポンス: ${JSON.stringify(result)}`);
+            
+            if (result.success) {
+                debugLog("✅ 注文送信成功");
+                cart = [];
+                updateCartView();
                 
                 // 成功メッセージ表示
-                alert(`ご注文が完了しました！\n\n注文ID: ${orderId}\n注文内容: ${orderDetails}\n合計金額: ¥${totalPrice}`);
+                alert('注文が正常に送信されました！');
                 
-                // カートをクリア
-                cart = [];
-                updateCartDisplay();
+                // サンクスページへリダイレクト（可能な場合）
+                if (liff.isInClient()) {
+                    liff.closeWindow();
+                } else {
+                    window.location.href = 'thankyou.html';
+                }
             } else {
-                throw new Error(result.message || '注文処理に失敗しました');
+                throw new Error(result.error || '注文処理に失敗しました');
             }
-
+            
         } catch (error) {
-            debugLog(`❌ 注文処理エラー: ${error.message}`);
-            debugLog(`❌ エラースタック: ${error.stack}`);
-            
-            let errorMessage = '注文処理中にエラーが発生しました。';
-            if (error.message.includes('Load failed')) {
-                errorMessage = 'ネットワークエラー: ' + error.message;
-            } else if (error.message.includes('JSON')) {
-                errorMessage = 'データ処理エラー: ' + error.message;
-            } else {
-                errorMessage = error.message;
-            }
-            
-            alert(errorMessage + '\n\nお手数ですが、お店に直接ご連絡ください。');
+            debugLog(`❌ 注文送信失敗: ${error.message}`);
+            console.error("Submit order failed:", error);
+            alert(`注文送信に失敗しました: ${error.message}`);
         } finally {
-            confirmOrderButton.disabled = false;
-            confirmOrderButton.textContent = '注文を確定する';
-            debugLog("🔄 注文処理終了、ボタン状態リセット");
+            // ボタンを元に戻す
+            if (confirmOrderButton) {
+                confirmOrderButton.disabled = cart.length === 0;
+                confirmOrderButton.textContent = '注文を確定する';
+            }
         }
     }
 
-    // エラー表示
-    function showError(message) {
-        loadingIndicator.innerHTML = `<p style="color: red;">エラー: ${message}</p>`;
+    // LINEメッセージ送信（可能な場合のみ）
+    async function sendLineMessageIfPossible(orderData) {
+        try {
+            if (!liff.isInClient()) {
+                debugLog("📱 LINEクライアント外のため、メッセージ送信をスキップ");
+                return;
+            }
+
+            const message = {
+                type: 'text',
+                text: `🍱 お弁当注文\n\n${orderData.orderDetails}\n\n合計: ¥${orderData.totalPrice}\n注文ID: ${orderData.orderId}`
+            };
+
+            await liff.sendMessages([message]);
+            debugLog("📱 LINEメッセージ送信成功");
+        } catch (error) {
+            debugLog(`📱 LINEメッセージ送信失敗: ${error.message}`);
+            // メッセージ送信失敗は致命的エラーではないので続行
+        }
     }
 
-    // 初期化実行
-    setupEventListeners();
-    initializeLiff();
-});
+})();
