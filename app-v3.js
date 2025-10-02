@@ -8,6 +8,94 @@
     // 【重要】Step 1-B でコピーした「注文記録用」のGAS URL
     const ORDER_API_URL = "https://script.google.com/macros/s/AKfycby2OQC7eulcX4F6vAuZTOy6qg3FFz_Iq2eW-XXi_l15cBkgZsu5KpkyiqgRQCQwR1hr/exec";
     // --- ▲▲▲ 設定項目 ▲▲▲ ---
+(() => {
+    'use strict';
+
+    // --- ▼▼▼ 設定項目 ▼▼▼ ---
+    const LIFF_ID = "2008199273-3ogv1YME";
+    const MENU_API_URL = "https://script.google.com/macros/s/AKfycbwLyS9WA5Mrycs9sSLIrPT6L9o3VDlIyaSAPCZ7WQxolGFNQbgxcBNjCjWjFUWGOobt/exec";
+    const ORDER_API_URL = "https://script.google.com/macros/s/AKfycby2OQC7eulcX4F6vAuZTOy6qg3FFz_Iq2eW-XXi_l15cBkgZsu5KpkyiqgRQCQwR1hr/exec";
+    // --- ▲▲▲ 設定項目 ▲▲▲ ---
+
+    let menuData = [], cart = [], currentItem = null;
+
+    const dom = {
+        loadingIndicator: document.getElementById('loading-indicator'),
+        menuContainer: document.getElementById('menu-container'),
+        systemCheck: document.getElementById('system-check'),
+        itemModalBackdrop: document.getElementById('item-modal-backdrop'),
+        modalImage: document.getElementById('modal-image'),
+        modalName: document.getElementById('modal-name'),
+        modalDescription: document.getElementById('modal-description'),
+        optionSelector: document.getElementById('option-selector'),
+        quantityDisplay: document.getElementById('quantity'),
+        modalPrice: document.getElementById('modal-price'),
+        cartModalBackdrop: document.getElementById('cart-modal-backdrop'),
+        cartSummaryList: document.getElementById('cart-summary-list'),
+        cartSummaryTotalPrice: document.getElementById('cart-summary-total-price'),
+        confirmOrderButton: document.getElementById('confirm-order-button'),
+        cartItemCount: document.getElementById('cart-item-count'),
+        cartTotalPrice: document.getElementById('cart-total-price'),
+        showCartButton: document.getElementById('show-cart-button'),
+    };
+
+    document.addEventListener('DOMContentLoaded', initializeApp);
+
+    async function initializeApp() {
+        const systemCheckPassed = await runSystemCheck();
+        if (!systemCheckPassed) return;
+
+        try {
+            await liff.init({ liffId: LIFF_ID });
+            setupEventListeners();
+            await fetchMenuData();
+        } catch (err) {
+            showError(`LIFF初期化に失敗: ${err.message}`);
+        }
+    }
+
+    async function runSystemCheck() {
+        dom.systemCheck.innerHTML = '<p>システムチェックを実行中...</p>';
+        try {
+            const response = await fetch(MENU_API_URL, { method: 'GET', mode: 'cors' });
+            if (!response.ok) throw new Error(`サーバーがエラー応答 (Status: ${response.status})`);
+            
+            if (response.headers.get('access-control-allow-origin')) {
+                dom.systemCheck.innerHTML = '<p style="color: green;">✅ 連携チェックOK。メニューを読み込みます...</p>';
+                return true;
+            } else {
+                throw new Error('CORS設定が確認できません。GASデプロイのアクセス権限が「全員」になっているか再確認してください。');
+            }
+        } catch (error) {
+            let errorMessage = `<b>メニューAPIへの接続に失敗しました。</b><br>`;
+            errorMessage += `<b>エラー内容:</b> ${error.message}<br>`;
+            errorMessage += `<b>原因の可能性:</b> GASのデプロイ設定で「アクセスできるユーザー」が「全員」になっていない可能性があります。ご確認の上、「新しいデプロイ」でURLを再発行し、設定を更新してください。`;
+            dom.systemCheck.innerHTML = `<div class="error-box">${errorMessage}</div>`;
+            dom.loadingIndicator.style.display = 'none';
+            return false;
+        }
+    }
+
+    function setupEventListeners() {
+        dom.itemModalBackdrop.addEventListener('click', (e) => { if (e.target === dom.itemModalBackdrop) closeItemModal(); });
+        document.getElementById('close-item-modal-button').addEventListener('click', closeItemModal);
+        document.getElementById('decrease-qty').addEventListener('click', () => updateQuantity(-1));
+        document.getElementById('increase-qty').addEventListener('click', () => updateQuantity(1));
+        document.getElementById('add-to-cart-button').addEventListener('click', addToCart);
+        dom.showCartButton.addEventListener('click', openCartModal);
+        dom.cartModalBackdrop.addEventListener('click', (e) => { if (e.target === dom.cartModalBackdrop) closeCartModal(); });
+        document.getElementById('close-cart-modal-button').addEventListener('click', closeCartModal);
+        document.getElementById('close-cart-button').addEventListener('click', closeCartModal);
+        dom.confirmOrderButton.addEventListener('click', submitOrder);
+    }
+
+    async function fetchMenuData() {
+        // ... (fetchMenuData以降のコードは変更ありません)
+    }
+    
+
+})();
+
 
     // --- グローバル変数 ---
     let menuData = [];
