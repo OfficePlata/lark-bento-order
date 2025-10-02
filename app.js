@@ -3,7 +3,7 @@
 document.addEventListener('DOMContentLoaded', initializeApp);
 
 const LIFF_ID = "2008199273-3ogv1YME";
-const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyi5sU5X1-wk02FSCkkl8_k6xFS0ExLfKsmXQiN7-zNCcohRY5lRvJeaIyRdEL1g-Gq/exec"; // ご自身のGAS URL
+const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxuAfe8aumpDo4JUSaWcVlr6QWVmOnjWW2RK48it9OuEJPK_1uXpFu_eFuBQjGJfjPU/exec"; // ご自身のGAS URL
 
 let menuData = [];
 let cart = [];
