@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 【重要】デプロイしたGASのURLをここに設定してください
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbz2NwKKzMTRHALP5Ue6__YLCdmThoN4z6d9_o2mzYez2HxTFvBmg7leanHKQ-zVKn1L/exec";
     // --- ▲▲▲ 最終設定項目 ▲▲▲ ---
+
     // 【追加】モバイルデバッグ用のログ表示エリア
     let debugArea = null;
     let debugEnabled = false;
@@ -158,25 +159,42 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // メニューデータの読み込み
+    // メニューデータの読み込み（修正版）
     async function loadMenuData() {
         try {
             debugLog(`📡 メニューデータ取得開始: ${GAS_API_URL}`);
             
+            // メニュー取得用のGETリクエスト（actionパラメータなし）
             const response = await fetch(GAS_API_URL);
             debugLog(`📡 メニュー取得レスポンス status: ${response.status}`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
             
             const responseText = await response.text();
             debugLog(`📡 メニューレスポンステキスト長: ${responseText.length}文字`);
             
-            menuData = JSON.parse(responseText);
-            debugLog(`📡 パース済みメニューデータ: ${menuData.length}件`);
+            // JSONパースを試行
+            try {
+                menuData = JSON.parse(responseText);
+                debugLog(`📡 パース済みメニューデータ: ${menuData.length}件`);
+                
+                if (!Array.isArray(menuData)) {
+                    throw new Error('メニューデータが配列ではありません');
+                }
+                
+                displayMenu();
+                debugLog("✅ メニュー表示完了");
+            } catch (parseError) {
+                debugLog(`❌ JSONパースエラー: ${parseError.message}`);
+                debugLog(`📡 レスポンステキスト: ${responseText.substring(0, 200)}...`);
+                throw new Error(`メニューデータの解析に失敗しました: ${parseError.message}`);
+            }
             
-            displayMenu();
-            debugLog("✅ メニュー表示完了");
         } catch (error) {
             debugLog(`❌ メニュー取得エラー: ${error.message}`);
-            showError('メニューの読み込みに失敗しました。');
+            showError(`メニューの読み込みに失敗しました: ${error.message}`);
         }
     }
 
@@ -184,6 +202,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function displayMenu() {
         loadingIndicator.style.display = 'none';
         menuContainer.innerHTML = '';
+
+        if (!menuData || menuData.length === 0) {
+            menuContainer.innerHTML = '<p>メニューデータがありません。</p>';
+            return;
+        }
 
         menuData.forEach(item => {
             if (item.isAvailable) {
@@ -302,7 +325,7 @@ document.addEventListener('DOMContentLoaded', function() {
         debugLog(`🛒 カート更新: ${totalItems}点 / ${totalPrice}円`);
     }
 
-    // 注文送信（GETリクエストに変更）
+    // 注文送信（GETリクエスト方式）
     async function submitOrder() {
         debugLog("🚀 注文処理開始");
         
@@ -371,23 +394,29 @@ document.addEventListener('DOMContentLoaded', function() {
             
             debugLog(`📡 GASレスポンス status: ${response.status}`);
             
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
             debugLog("📡 レスポンステキスト取得開始...");
             const responseText = await response.text();
             debugLog("📡 レスポンステキスト取得完了");
             
             debugLog(`📡 GASレスポンステキスト: ${responseText}`);
 
-            if (!response.ok) {
-                throw new Error(`GASレスポンスエラー: ${response.status}`);
+            let result;
+            try {
+                result = JSON.parse(responseText);
+            } catch (parseError) {
+                debugLog(`❌ レスポンスJSONパースエラー: ${parseError.message}`);
+                throw new Error(`レスポンスの解析に失敗しました: ${parseError.message}`);
             }
-
-            const result = JSON.parse(responseText);
             
             if (result.status === 'success') {
                 debugLog("✅ 注文処理成功");
                 
                 // 成功メッセージ表示
-                alert(`ご注文が完了しました！\n\n注文ID: ${orderId}\n注文内容: ${orderDetails}\n合計金額: ¥${totalPrice}`);
+                alert(`ご注文が完了しました！\n\n注文ID: ${orderId}\n注文内容: ${orderDetails}\n合計金額: ¥${totalPrice}\n\nLarkテーブルに保存されました。`);
                 
                 // カートをクリア
                 cart = [];
@@ -426,6 +455,15 @@ document.addEventListener('DOMContentLoaded', function() {
     window.testGasEndpoint = async function() {
         debugLog("🧪 GASエンドポイントテスト開始");
         try {
+            // メニュー取得テスト
+            debugLog("🧪 メニュー取得テスト");
+            const menuResponse = await fetch(GAS_API_URL);
+            const menuText = await menuResponse.text();
+            debugLog(`🧪 メニューレスポンス status: ${menuResponse.status}`);
+            debugLog(`🧪 メニューレスポンステキスト: ${menuText.substring(0, 200)}...`);
+            
+            // 注文処理テスト
+            debugLog("🧪 注文処理テスト");
             const testParams = new URLSearchParams({
                 action: 'order',
                 orderId: 'test123',
@@ -438,13 +476,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const testUrl = `${GAS_API_URL}?${testParams.toString()}`;
             debugLog(`🧪 テストURL: ${testUrl}`);
             
-            const response = await fetch(testUrl);
-            const responseText = await response.text();
+            const orderResponse = await fetch(testUrl);
+            const orderText = await orderResponse.text();
             
-            debugLog(`🧪 テストレスポンス status: ${response.status}`);
-            debugLog(`🧪 テストレスポンステキスト: ${responseText}`);
+            debugLog(`🧪 注文レスポンス status: ${orderResponse.status}`);
+            debugLog(`🧪 注文レスポンステキスト: ${orderText}`);
             
-            if (response.ok) {
+            if (menuResponse.ok && orderResponse.ok) {
                 debugLog("✅ GASエンドポイントテスト成功");
             } else {
                 debugLog("❌ GASエンドポイントテスト失敗");
