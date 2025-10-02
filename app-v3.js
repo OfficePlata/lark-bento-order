@@ -1,101 +1,20 @@
+/**
+ * =================================================================================
+ * LIFFアプリのメインロジック（最終版） - API集約型
+ * =================================================================================
+ * 役割：
+ * 1. LIFFの初期化、画面要素の制御、ユーザー操作への応答を行う
+ * 2. すべてのバックエンド通信を、単一の「メインAPI」GASを介して行う
+ * =================================================================================
+ */
 (() => {
     'use strict';
 
     // --- ▼▼▼ 設定項目 ▼▼▼ ---
     const LIFF_ID = "2008199273-3ogv1YME";
-    // 【重要】Step 1-A でコピーした「メニュー取得用」のGAS URL
-    const MENU_API_URL = "https://script.google.com/macros/s/AKfycbwLyS9WA5Mrycs9sSLIrPT6L9o3VDlIyaSAPCZ7WQxolGFNQbgxcBNjCjWjFUWGOobt/exec";
-    // 【重要】Step 1-B でコピーした「注文記録用」のGAS URL
-    const ORDER_API_URL = "https://script.google.com/macros/s/AKfycby2OQC7eulcX4F6vAuZTOy6qg3FFz_Iq2eW-XXi_l15cBkgZsu5KpkyiqgRQCQwR1hr/exec";
+    // 【重要】Step 1-B でコピーした「メインAPI」のGAS URL
+    const MAIN_API_URL = "https://script.google.com/macros/s/AKfycbyspYl9MIfJRvbfGLlEm1c5TZzDPSNN_3vRutK7okMrUmRokelygxVq_GTmaFMMxvT_/exec";
     // --- ▲▲▲ 設定項目 ▲▲▲ ---
-(() => {
-    'use strict';
-
-    // --- ▼▼▼ 設定項目 ▼▼▼ ---
-    const LIFF_ID = "2008199273-3ogv1YME";
-    const MENU_API_URL = "https://script.google.com/macros/s/AKfycbwLyS9WA5Mrycs9sSLIrPT6L9o3VDlIyaSAPCZ7WQxolGFNQbgxcBNjCjWjFUWGOobt/exec";
-    const ORDER_API_URL = "https://script.google.com/macros/s/AKfycby2OQC7eulcX4F6vAuZTOy6qg3FFz_Iq2eW-XXi_l15cBkgZsu5KpkyiqgRQCQwR1hr/exec";
-    // --- ▲▲▲ 設定項目 ▲▲▲ ---
-
-    let menuData = [], cart = [], currentItem = null;
-
-    const dom = {
-        loadingIndicator: document.getElementById('loading-indicator'),
-        menuContainer: document.getElementById('menu-container'),
-        systemCheck: document.getElementById('system-check'),
-        itemModalBackdrop: document.getElementById('item-modal-backdrop'),
-        modalImage: document.getElementById('modal-image'),
-        modalName: document.getElementById('modal-name'),
-        modalDescription: document.getElementById('modal-description'),
-        optionSelector: document.getElementById('option-selector'),
-        quantityDisplay: document.getElementById('quantity'),
-        modalPrice: document.getElementById('modal-price'),
-        cartModalBackdrop: document.getElementById('cart-modal-backdrop'),
-        cartSummaryList: document.getElementById('cart-summary-list'),
-        cartSummaryTotalPrice: document.getElementById('cart-summary-total-price'),
-        confirmOrderButton: document.getElementById('confirm-order-button'),
-        cartItemCount: document.getElementById('cart-item-count'),
-        cartTotalPrice: document.getElementById('cart-total-price'),
-        showCartButton: document.getElementById('show-cart-button'),
-    };
-
-    document.addEventListener('DOMContentLoaded', initializeApp);
-
-    async function initializeApp() {
-        const systemCheckPassed = await runSystemCheck();
-        if (!systemCheckPassed) return;
-
-        try {
-            await liff.init({ liffId: LIFF_ID });
-            setupEventListeners();
-            await fetchMenuData();
-        } catch (err) {
-            showError(`LIFF初期化に失敗: ${err.message}`);
-        }
-    }
-
-    async function runSystemCheck() {
-        dom.systemCheck.innerHTML = '<p>システムチェックを実行中...</p>';
-        try {
-            const response = await fetch(MENU_API_URL, { method: 'GET', mode: 'cors' });
-            if (!response.ok) throw new Error(`サーバーがエラー応答 (Status: ${response.status})`);
-            
-            if (response.headers.get('access-control-allow-origin')) {
-                dom.systemCheck.innerHTML = '<p style="color: green;">✅ 連携チェックOK。メニューを読み込みます...</p>';
-                return true;
-            } else {
-                throw new Error('CORS設定が確認できません。GASデプロイのアクセス権限が「全員」になっているか再確認してください。');
-            }
-        } catch (error) {
-            let errorMessage = `<b>メニューAPIへの接続に失敗しました。</b><br>`;
-            errorMessage += `<b>エラー内容:</b> ${error.message}<br>`;
-            errorMessage += `<b>原因の可能性:</b> GASのデプロイ設定で「アクセスできるユーザー」が「全員」になっていない可能性があります。ご確認の上、「新しいデプロイ」でURLを再発行し、設定を更新してください。`;
-            dom.systemCheck.innerHTML = `<div class="error-box">${errorMessage}</div>`;
-            dom.loadingIndicator.style.display = 'none';
-            return false;
-        }
-    }
-
-    function setupEventListeners() {
-        dom.itemModalBackdrop.addEventListener('click', (e) => { if (e.target === dom.itemModalBackdrop) closeItemModal(); });
-        document.getElementById('close-item-modal-button').addEventListener('click', closeItemModal);
-        document.getElementById('decrease-qty').addEventListener('click', () => updateQuantity(-1));
-        document.getElementById('increase-qty').addEventListener('click', () => updateQuantity(1));
-        document.getElementById('add-to-cart-button').addEventListener('click', addToCart);
-        dom.showCartButton.addEventListener('click', openCartModal);
-        dom.cartModalBackdrop.addEventListener('click', (e) => { if (e.target === dom.cartModalBackdrop) closeCartModal(); });
-        document.getElementById('close-cart-modal-button').addEventListener('click', closeCartModal);
-        document.getElementById('close-cart-button').addEventListener('click', closeCartModal);
-        dom.confirmOrderButton.addEventListener('click', submitOrder);
-    }
-
-    async function fetchMenuData() {
-        // ... (fetchMenuData以降のコードは変更ありません)
-    }
-    
-
-})();
-
 
     // --- グローバル変数 ---
     let menuData = [];
@@ -105,6 +24,7 @@
     // --- DOM要素のキャッシュ ---
     const dom = {
         loadingIndicator: document.getElementById('loading-indicator'),
+        systemCheck: document.getElementById('system-check'),
         menuContainer: document.getElementById('menu-container'),
         itemModalBackdrop: document.getElementById('item-modal-backdrop'),
         modalImage: document.getElementById('modal-image'),
@@ -125,23 +45,16 @@
     // --- アプリケーション初期化 ---
     document.addEventListener('DOMContentLoaded', initializeApp);
 
-    // ★★★★★【ここを修正しました】★★★★★
     async function initializeApp() {
-        if (MENU_API_URL.includes("ここに") || ORDER_API_URL.includes("ここに")) {
+        if (MAIN_API_URL.includes("ここに")) {
             showError("APIのURLが設定されていません。");
             return;
         }
 
         try {
-            // 1. LIFFの初期化が完了するのを待つ
             await liff.init({ liffId: LIFF_ID });
-            
-            // 2. イベントリスナーを設定する
             setupEventListeners();
-
-            // 3. メニューデータを取得する
             await fetchMenuData();
-
         } catch (err) {
             showError(`初期化処理に失敗しました: ${err.message}`);
         }
@@ -164,13 +77,17 @@
     // --- メニュー処理 ---
     async function fetchMenuData() {
         try {
-            const response = await fetch(MENU_API_URL);
+            // メインAPIにGETリクエストを送ってメニューを取得
+            const response = await fetch(MAIN_API_URL);
             if (!response.ok) throw new Error(`サーバーエラー: ${response.status}`);
+            
             const data = await response.json();
-            if (data.error) throw new Error(data.details || data.error);
+            if (data.error) throw new Error(data.details || 'メニューデータの形式が正しくありません');
+
             menuData = data;
             displayMenu();
             dom.loadingIndicator.style.display = 'none';
+
         } catch (error) {
             showError(`メニューの取得に失敗: ${error.message}`);
         }
@@ -198,15 +115,17 @@
         dom.modalImage.src = item.imageUrl || 'https://placehold.co/400x240/eee/ccc?text=No+Image';
         dom.modalName.textContent = item.name;
         dom.modalDescription.textContent = item.description || '';
+
         const options = [
             { key: 'regular', name: '普通盛り', price: item.price_regular },
             { key: 'large', name: '大盛り', price: item.price_large },
             { key: 'side_only', name: 'おかずのみ', price: item.price_side_only },
         ];
+
         dom.optionSelector.innerHTML = '';
         let isFirstOption = true;
         options.forEach(opt => {
-            if (opt.price > 0) {
+            if (opt.price > 0) { // 価格が0より大きいオプションのみ表示
                 const checked = isFirstOption ? 'checked' : '';
                 const selected = isFirstOption ? 'selected' : '';
                 dom.optionSelector.innerHTML += `
@@ -217,6 +136,7 @@
                 isFirstOption = false;
             }
         });
+
         dom.quantityDisplay.textContent = '1';
         updateModalPrice();
         dom.itemModalBackdrop.classList.add('visible');
@@ -228,13 +148,16 @@
         label.querySelector('input[type="radio"]').checked = true;
         updateModalPrice();
     };
+
     function closeItemModal() { dom.itemModalBackdrop.classList.remove('visible'); }
+
     function updateQuantity(change) {
         let qty = parseInt(dom.quantityDisplay.textContent, 10) + change;
         if (qty < 1) qty = 1;
         dom.quantityDisplay.textContent = qty;
         updateModalPrice();
     }
+
     function updateModalPrice() {
         const selOpt = document.querySelector('input[name="price_option"]:checked');
         const qty = parseInt(dom.quantityDisplay.textContent, 10);
@@ -247,11 +170,21 @@
         const selOptEl = document.querySelector('input[name="price_option"]:checked');
         if (!currentItem || !selOptEl) return;
         const qty = parseInt(dom.quantityDisplay.textContent, 10);
-        const selOpt = { name: selOptEl.parentElement.querySelector('span').textContent, price: parseInt(selOptEl.dataset.price, 10) };
-        cart.push({ id: currentItem.id, name: currentItem.name, quantity: qty, option: selOpt, totalPrice: selOpt.price * qty });
+        const selOpt = {
+            name: selOptEl.parentElement.querySelector('span').textContent,
+            price: parseInt(selOptEl.dataset.price, 10)
+        };
+        cart.push({
+            id: currentItem.id,
+            name: currentItem.name,
+            quantity: qty,
+            option: selOpt,
+            totalPrice: selOpt.price * qty
+        });
         updateCartView();
         closeItemModal();
     }
+
     function updateCartView() {
         const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
         const totalPrice = cart.reduce((sum, item) => sum + item.totalPrice, 0);
@@ -259,26 +192,38 @@
         dom.cartTotalPrice.textContent = totalPrice;
         dom.showCartButton.disabled = cart.length === 0;
     }
+
     function openCartModal() {
         if (cart.length === 0) return;
         dom.cartSummaryList.innerHTML = '';
         cart.forEach((item, index) => {
             dom.cartSummaryList.innerHTML += `
                 <div class="cart-list-item">
-                    <div class="cart-list-item-details"><p class="item-name">${item.name}</p><p class="item-meta">${item.option.name} x ${item.quantity}</p></div>
-                    <div class="cart-list-item-actions"><span class="item-total">¥${item.totalPrice}</span><button class="remove-button" onclick="window.removeCartItem(${index})">&times;</button></div>
+                    <div class="cart-list-item-details">
+                        <p class="item-name">${item.name}</p>
+                        <p class="item-meta">${item.option.name} x ${item.quantity}</p>
+                    </div>
+                    <div class="cart-list-item-actions">
+                        <span class="item-total">¥${item.totalPrice}</span>
+                        <button class="remove-button" onclick="window.removeCartItem(${index})">&times;</button>
+                    </div>
                 </div>`;
         });
         const totalPrice = cart.reduce((sum, item) => sum + item.totalPrice, 0);
         dom.cartSummaryTotalPrice.textContent = `¥${totalPrice}`;
         dom.cartModalBackdrop.classList.add('visible');
     }
+
     function closeCartModal() { dom.cartModalBackdrop.classList.remove('visible'); }
+
     window.removeCartItem = (index) => {
         cart.splice(index, 1);
         updateCartView();
-        if (cart.length > 0) openCartModal();
-        else closeCartModal();
+        if (cart.length > 0) {
+            openCartModal();
+        } else {
+            closeCartModal();
+        }
     };
     
     // --- 注文処理 ---
@@ -291,31 +236,46 @@
                 setOrderButtonState(false, '注文を確定する');
                 return;
             }
+
             const profile = await liff.getProfile();
             const totalPrice = cart.reduce((sum, item) => sum + item.totalPrice, 0);
             const orderDetails = cart.map(item => `${item.name} (${item.option.name}) x ${item.quantity}`).join('\n');
-            const orderData = { userId: profile.userId, displayName: profile.displayName, orderDetails: orderDetails, totalPrice: totalPrice };
+            const orderData = {
+                action: 'order', // 注文であることを示す
+                payload: {
+                    userId: profile.userId,
+                    displayName: profile.displayName,
+                    orderDetails: orderDetails,
+                    totalPrice: totalPrice
+                }
+            };
             
-            const response = await fetch(ORDER_API_URL, {
+            // メインAPIにPOSTリクエストを送って注文を記録
+            const response = await fetch(MAIN_API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(orderData),
             });
+
             if (!response.ok) throw new Error(`サーバーエラー: ${response.status}`);
+            
             const result = await response.json();
+
             if (result.success) {
                 await sendConfirmationMessage(orderDetails, totalPrice);
                 alert('ご注文ありがとうございました！');
                 resetApp();
                 if (liff.isInClient()) liff.closeWindow();
             } else {
-                throw new Error(result.error || '注文処理に失敗しました');
+                throw new Error(result.details || '注文処理に失敗しました');
             }
+
         } catch (error) {
             alert(`注文処理に失敗しました: ${error.message}`);
             setOrderButtonState(false, '注文を確定する');
         }
     }
+
     async function sendConfirmationMessage(orderDetails, totalPrice) {
         if (!liff.isInClient()) return;
         try {
@@ -332,14 +292,15 @@
         dom.loadingIndicator.innerHTML = `<p style="color: red;">${message}</p>`;
         dom.loadingIndicator.style.display = 'block';
     }
+
     function setOrderButtonState(disabled, text) {
         dom.confirmOrderButton.disabled = disabled;
         dom.confirmOrderButton.textContent = text;
     }
+
     function resetApp() {
         cart = [];
         updateCartView();
         closeCartModal();
     }
 })();
-
