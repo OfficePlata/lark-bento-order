@@ -1,46 +1,31 @@
-// app.js (URLトリガー方式・最終版)
+// app.js (LIFFメッセージ送信方式・安定版)
 
 document.addEventListener('DOMContentLoaded', initializeApp);
 
-// --- ▼▼▼ 設定項目 ▼▼▼ ---
 const LIFF_ID = "2008199273-3ogv1YME";
-const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyi5sU5X1-wk02FSCkkl8_k6xFS0ExLfKsmXQiN7-zNCcohRY5lRvJeaIyRdEL1g-Gq/exec";
-// --- ▲▲▲ 設定項目 ▲▲▲ ---
+const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyi5sU5X1-wk02FSCkkl8_k6xFS0ExLfKsmXQiN7-zNCcohRY5lRvJeaIyRdEL1g-Gq/exec"; // ご自身のGAS URL
 
-// グローバル変数
 let menuData = [];
 let cart = [];
 let userProfile = null;
+const dom = {}; // DOM要素はinitializeAppでキャッシュ
 
-// DOM要素のキャッシュ
-const dom = {
-  loading: document.getElementById('loading'),
-  menuContainer: document.getElementById('menu-container'),
-  cartFooter: document.getElementById('cart-footer'),
-  viewCartButton: document.getElementById('view-cart-button'),
-  cartItemCount: document.getElementById('cart-item-count'),
-  cartTotalPrice: document.getElementById('cart-total-price'),
-  cartModal: document.getElementById('cart-modal'),
-  closeCartModal: document.getElementById('close-cart-modal'),
-  cartItemsContainer: document.getElementById('cart-items-container'),
-  cartModalTotalPrice: document.getElementById('cart-modal-total-price'),
-  submitOrderButton: document.getElementById('submit-order-button'),
-};
-
-/**
- * アプリケーションの初期化
- */
 async function initializeApp() {
-  if (!LIFF_ID || !GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("貼り付け")) {
-    showError("LIFF_ID または GAS_WEB_APP_URL が設定されていません。");
-    return;
-  }
+  // DOM要素のキャッシュ
+  dom.loading = document.getElementById('loading');
+  dom.menuContainer = document.getElementById('menu-container');
+  dom.viewCartButton = document.getElementById('view-cart-button');
+  dom.cartItemCount = document.getElementById('cart-item-count');
+  dom.cartTotalPrice = document.getElementById('cart-total-price');
+  dom.cartModal = document.getElementById('cart-modal');
+  dom.closeCartModal = document.getElementById('close-cart-modal');
+  dom.cartItemsContainer = document.getElementById('cart-items-container');
+  dom.cartModalTotalPrice = document.getElementById('cart-modal-total-price');
+  dom.submitOrderButton = document.getElementById('submit-order-button');
+  
   try {
     await liff.init({ liffId: LIFF_ID });
-    if (!liff.isLoggedIn()) {
-      liff.login();
-      return;
-    }
+    if (!liff.isLoggedIn()) { liff.login(); return; }
     userProfile = await liff.getProfile();
     setupEventListeners();
     await fetchMenu();
@@ -51,23 +36,15 @@ async function initializeApp() {
   }
 }
 
-/**
- * イベントリスナーをまとめて設定
- */
 function setupEventListeners() {
   dom.viewCartButton.addEventListener('click', openCartModal);
   dom.closeCartModal.addEventListener('click', closeCartModal);
   dom.submitOrderButton.addEventListener('click', confirmAndSubmitOrder);
   dom.cartModal.addEventListener('click', (e) => {
-    if (e.target === dom.cartModal) {
-      closeCartModal();
-    }
+    if (e.target === dom.cartModal) closeCartModal();
   });
 }
 
-/**
- * GASからメニューデータを取得
- */
 async function fetchMenu() {
   try {
     const response = await fetch(GAS_WEB_APP_URL);
@@ -81,11 +58,8 @@ async function fetchMenu() {
   }
 }
 
-/**
- * メニューを画面に表示
- */
 function displayMenu() {
-  dom.menuContainer.innerHTML = ''; // スケルトンローダーをクリア
+  dom.menuContainer.innerHTML = '';
   menuData.forEach(item => {
     const card = document.createElement('div');
     card.className = 'menu-item-card';
@@ -94,47 +68,27 @@ function displayMenu() {
       <div class="item-info">
         <p class="item-name">${item.name}</p>
         <p class="item-price">¥${item.prices.regular}〜</p>
-      </div>
-    `;
+      </div>`;
     card.onclick = () => showAddToCartModal(item);
     dom.menuContainer.appendChild(card);
   });
 }
 
-/**
- * カート追加用のモーダル（簡易版）
- */
 function showAddToCartModal(item) {
-  const selectedOption = {
-    key: 'regular',
-    name: '普通盛り',
-    price: item.prices.regular
-  };
+  const selectedOption = { key: 'regular', name: '普通盛り', price: item.prices.regular };
   addToCart(item, selectedOption, 1);
 }
 
-/**
- * カートに商品を追加
- */
 function addToCart(item, option, quantity) {
-  const existingItemIndex = cart.findIndex(cartItem => cartItem.id === item.id && cartItem.option.key === option.key);
+  const existingItemIndex = cart.findIndex(ci => ci.id === item.id && ci.option.key === option.key);
   if (existingItemIndex > -1) {
     cart[existingItemIndex].quantity += quantity;
   } else {
-    cart.push({
-      id: item.id,
-      name: item.name,
-      option: option,
-      quantity: quantity,
-      price: option.price
-    });
+    cart.push({ id: item.id, name: item.name, option, quantity, price: option.price });
   }
   updateCartView();
 }
 
-/**
- * カートの表示を更新 (フッター)
- */
 function updateCartView() {
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -144,24 +98,15 @@ function updateCartView() {
   dom.viewCartButton.disabled = cart.length === 0;
 }
 
-/**
- * カートモーダルを開く
- */
 function openCartModal() {
   renderCartItems();
   dom.cartModal.classList.add('visible');
 }
 
-/**
- * カートモーダルを閉じる
- */
 function closeCartModal() {
   dom.cartModal.classList.remove('visible');
 }
 
-/**
- * カートモーダルの中身を描画
- */
 function renderCartItems() {
   if (cart.length === 0) {
     dom.cartItemsContainer.innerHTML = '<p>カートは空です。</p>';
@@ -175,8 +120,7 @@ function renderCartItems() {
     itemEl.className = 'cart-item';
     itemEl.innerHTML = `
       <div class="cart-item-details">
-        <p class="cart-item-name">${item.name}</p>
-        <p class="cart-item-meta">${item.option.name}</p>
+        <p class="cart-item-name">${item.name}</p><p class="cart-item-meta">${item.option.name}</p>
         <p class="cart-item-price">¥${item.price * item.quantity}</p>
       </div>
       <div class="cart-item-actions">
@@ -186,65 +130,42 @@ function renderCartItems() {
           <button class="quantity-btn" onclick="updateItemQuantity(${index}, 1)">+</button>
         </div>
         <button class="remove-item-btn" onclick="removeItemFromCart(${index})">&times;</button>
-      </div>
-    `;
+      </div>`;
     dom.cartItemsContainer.appendChild(itemEl);
   });
   updateCartView();
 }
 
-/**
- * カート内の商品の数量を変更
- */
 window.updateItemQuantity = (index, change) => {
   cart[index].quantity += change;
-  if (cart[index].quantity <= 0) {
-    cart.splice(index, 1);
-  }
+  if (cart[index].quantity <= 0) cart.splice(index, 1);
   renderCartItems();
 };
 
-/**
- * カートから商品を削除
- */
 window.removeItemFromCart = (index) => {
   cart.splice(index, 1);
   renderCartItems();
 };
 
-/**
- * 注文を確定し、サーバーに送信する
- */
 async function confirmAndSubmitOrder() {
   dom.submitOrderButton.disabled = true;
   dom.submitOrderButton.textContent = '処理中...';
-
   const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
   const orderData = {
     userId: userProfile.userId,
     displayName: userProfile.displayName,
     cart: cart.map(item => ({ name: item.name, option: item.option, quantity: item.quantity })),
-    totalPrice: totalPrice,
+    totalPrice,
   };
-  
   try {
-    const response = await fetch(GAS_WEB_APP_URL, {
+    await fetch(GAS_WEB_APP_URL, {
       method: 'POST',
+      body: JSON.stringify(orderData),
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(orderData)
     });
-
-    const result = await response.json();
-    if (!result.success) {
-      throw new Error(result.message || 'サーバーでエラーが発生しました。');
-    }
-    
+    await sendThanksMessage(orderData);
     alert('ご注文ありがとうございました！');
-    if (liff.isInClient()) {
-      liff.closeWindow();
-    }
-
+    if (liff.isInClient()) liff.closeWindow();
   } catch (err) {
     alert(`注文処理中にエラーが発生しました: ${err.message}`);
     dom.submitOrderButton.disabled = false;
@@ -252,9 +173,57 @@ async function confirmAndSubmitOrder() {
   }
 }
 
-/**
- * エラーメッセージを表示
- */
+async function sendThanksMessage(orderData) {
+  if (!liff.isInClient()) return;
+  const flexMessage = createReceiptFlexMessage(orderData);
+  try {
+    await liff.sendMessages([flexMessage]);
+  } catch (err) {
+    console.error('メッセージの送信に失敗しました:', err);
+    alert('確認メッセージの送信には失敗しましたが、ご注文は受け付けられております。');
+  }
+}
+
+function createReceiptFlexMessage(orderData) {
+  const itemDetailsContents = orderData.cart.map(item => ({
+    type: "box", layout: "horizontal",
+    contents: [
+      { type: "text", text: `${item.name} (${item.option.name})`, wrap: true, flex: 3 },
+      { type: "text", text: `x ${item.quantity}`, flex: 1, align: "end" }
+    ]
+  }));
+  return {
+    type: "flex", altText: "ご注文内容の確認",
+    contents: {
+      type: "bubble",
+      header: {
+        type: "box", layout: "vertical",
+        contents: [
+          { type: "text", text: "ご注文ありがとうございます！", weight: "bold", color: "#1DB446", size: "md" },
+          { type: "text", text: "ご注文内容が確定しました", weight: "bold", size: "xl", margin: "md" }
+        ]
+      },
+      body: {
+        type: "box", layout: "vertical",
+        contents: [
+          { type: "text", text: "ご注文内容", size: "xs", color: "#aaaaaa" },
+          { type: "separator", margin: "md" },
+          ...itemDetailsContents,
+          { type: "separator", margin: "lg" },
+          {
+            type: "box", layout: "horizontal", margin: "md",
+            contents: [
+              { type: "text", text: "合計金額", weight: "bold" },
+              { type: "text", text: `¥${orderData.totalPrice}`, weight: "bold", align: "end" }
+            ]
+          }
+        ]
+      },
+      styles: { header: { backgroundColor: "#F0FFF0" } }
+    }
+  };
+}
+
 function showError(message) {
   dom.loading.innerHTML = `<p style="color: red; padding: 20px;">${message}</p>`;
   dom.loading.style.display = 'flex';
