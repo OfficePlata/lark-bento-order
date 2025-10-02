@@ -3,85 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>らくらく弁当 注文アプリ</title>
-    <!-- CSSファイルをリンク -->
+    <title>らくらくキッチン 注文アプリ</title>
+    <!-- ★★★★★【最重要】LIFF SDKを読み込むためのスクリプトを追加 ★★★★★ -->
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link rel="stylesheet" href="style.css">
-    <!-- JavaScriptファイルをdeferで読み込み -->
-    <script src="app-v3.js" defer></script>
 </head>
 <body>
+    <header>
+        <h1>らくらくキッチン 注文アプリ</h1>
+    </header>
 
-    <!-- メインコンテンツ -->
-    <div id="app">
-        <!-- ヘッダー -->
-        <header class="app-header">
-            <h1>らくらくキッチン 注文アプリ</h1>
-        </header>
-
-        <!-- メニューコンテナ -->
-        <main id="menu-container" class="menu-grid">
-            <!-- メニュー項目がここに挿入されます -->
-        </main>
-
-        <!-- ローディング / エラー表示エリア -->
-        <div id="loading-indicator" class="status-indicator">
+    <main>
+        <div id="loading-indicator">
+            <div class="spinner"></div>
             <p>メニューを読み込んでいます...</p>
         </div>
-    </div>
-
-    <!-- カート・注文フッター -->
-    <footer id="cart-footer" class="cart-footer">
-        <div class="cart-summary">
-            <span id="cart-item-count">0</span> 点 / 
-            合計 <span id="cart-total-price">0</span> 円
+        <div id="menu-container" class="menu-grid">
+            <!-- メニューはJavaScriptでここに挿入されます -->
         </div>
-        <button id="show-cart-button" class="action-button" disabled>
-            カートを見る
+    </main>
+
+    <footer>
+        <button id="show-cart-button" class="cart-button" disabled>
+            <span id="cart-item-count">0</span>点 / 合計 ¥<span id="cart-total-price">0</span>
+            <span>カートを見る</span>
         </button>
     </footer>
 
     <!-- 商品詳細モーダル -->
     <div id="item-modal-backdrop" class="modal-backdrop">
-        <div id="item-modal" class="modal-content">
-            <img id="modal-image" class="modal-image" src="" alt="商品画像">
-            <h2 id="modal-name" class="modal-title"></h2>
-            <p id="modal-description" class="modal-description"></p>
-            
-            <div id="option-selector" class="option-selector"></div>
-            
-            <div class="quantity-selector">
-                <button id="decrease-qty" class="quantity-button">-</button>
-                <span id="quantity" class="quantity-display">1</span>
-                <button id="increase-qty" class="quantity-button">+</button>
-            </div>
-
-            <button id="add-to-cart-button" class="modal-action-button">
-                カートに追加 <span id="modal-price">0</span>円
-            </button>
+        <div class="modal-content">
             <button id="close-item-modal-button" class="modal-close-button">&times;</button>
+            <img id="modal-image" src="" alt="商品画像">
+            <h2 id="modal-name"></h2>
+            <p id="modal-description"></p>
+            <div id="option-selector" class="option-selector"></div>
+            <div class="quantity-selector">
+                <button id="decrease-qty">-</button>
+                <span id="quantity">1</span>
+                <button id="increase-qty">+</button>
+            </div>
+            <button id="add-to-cart-button" class="primary-button">
+                <span>カートに追加</span>
+                <span>¥<span id="modal-price">0</span></span>
+            </button>
         </div>
     </div>
-
+    
     <!-- カート確認モーダル -->
     <div id="cart-modal-backdrop" class="modal-backdrop">
-        <div class="modal-content cart-review-modal">
-            <h2 class="modal-title">注文内容の確認</h2>
-            <div id="cart-summary-list" class="cart-summary-list">
-                <!-- カート内容がここに挿入されます -->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>注文内容の確認</h2>
+                <button id="close-cart-modal-button" class="modal-close-button">&times;</button>
             </div>
+            <div id="cart-summary-list" class="cart-summary-list"></div>
             <div class="cart-summary-total">
-                <span>合計</span>
-                <span id="cart-summary-total-price">0円</span>
+                <span>合計金額</span>
+                <span id="cart-summary-total-price">¥0</span>
             </div>
-            <div class="modal-button-group">
-                <button id="close-cart-button" class="secondary-button">戻る</button>
-                <button id="confirm-order-button" class="action-button">注文を確定する</button>
+            <div class="modal-footer">
+                <button id="close-cart-button" class="secondary-button">買い物を続ける</button>
+                <button id="confirm-order-button" class="primary-button">注文を確定する</button>
             </div>
-            <button id="close-cart-modal-button" class="modal-close-button">&times;</button>
         </div>
     </div>
-
+    
+    <script src="app-v3.js" defer></script>
 </body>
 </html>
-
 
