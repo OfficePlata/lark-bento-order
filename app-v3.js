@@ -4,75 +4,60 @@ document.addEventListener('DOMContentLoaded', function() {
     // 【重要】デプロイしたGASのURLをここに設定してください
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbz2NwKKzMTRHALP5Ue6__YLCdmThoN4z6d9_o2mzYez2HxTFvBmg7leanHKQ-zVKn1L/exec";
     // --- ▲▲▲ 最終設定項目 ▲▲▲ ---
-
     // 【追加】モバイルデバッグ用のログ表示エリア
-    let debugArea = null;
-    let debugEnabled = false;
+    let debugLogArea = null;
+    
+    function createDebugLogArea() {
+        if (debugLogArea) return;
+        
+        debugLogArea = document.createElement('div');
+        debugLogArea.id = 'debug-log-area';
+        debugLogArea.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 200px;
+            background: rgba(0,0,0,0.9);
+            color: #00ff00;
+            font-family: monospace;
+            font-size: 10px;
+            padding: 10px;
+            overflow-y: auto;
+            z-index: 10000;
+            display: none;
+        `;
+        document.body.appendChild(debugLogArea);
+        
+        // デバッグエリアの表示/非表示切り替え
+        const toggleButton = document.createElement('button');
+        toggleButton.textContent = 'DEBUG';
+        toggleButton.style.cssText = `
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 10001;
+            background: red;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            font-size: 12px;
+        `;
+        toggleButton.onclick = () => {
+            debugLogArea.style.display = debugLogArea.style.display === 'none' ? 'block' : 'none';
+        };
+        document.body.appendChild(toggleButton);
+    }
 
     function debugLog(message) {
         const timestamp = new Date().toLocaleTimeString('ja-JP');
         const logMessage = `[${timestamp}] ${message}`;
         console.log(logMessage);
         
-        if (debugEnabled && debugArea) {
-            debugArea.innerHTML += logMessage + '\n';
-            debugArea.scrollTop = debugArea.scrollHeight;
+        if (debugLogArea) {
+            debugLogArea.innerHTML += logMessage + '\n';
+            debugLogArea.scrollTop = debugLogArea.scrollHeight;
         }
-    }
-
-    function createDebugArea() {
-        // デバッグボタンを作成
-        const debugButton = document.createElement('button');
-        debugButton.textContent = 'DEBUG';
-        debugButton.style.cssText = `
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            z-index: 10000;
-            background: #ff4444;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 12px;
-            cursor: pointer;
-        `;
-        
-        debugButton.addEventListener('click', function() {
-            debugEnabled = !debugEnabled;
-            if (debugEnabled) {
-                if (!debugArea) {
-                    debugArea = document.createElement('pre');
-                    debugArea.style.cssText = `
-                        position: fixed;
-                        top: 50px;
-                        left: 10px;
-                        right: 10px;
-                        height: 200px;
-                        background: black;
-                        color: #00ff00;
-                        font-size: 10px;
-                        padding: 10px;
-                        overflow-y: auto;
-                        z-index: 9999;
-                        border: 1px solid #ccc;
-                        font-family: monospace;
-                    `;
-                    document.body.appendChild(debugArea);
-                }
-                debugArea.style.display = 'block';
-                debugButton.textContent = 'HIDE DEBUG';
-                debugButton.style.background = '#44ff44';
-            } else {
-                if (debugArea) {
-                    debugArea.style.display = 'none';
-                }
-                debugButton.textContent = 'DEBUG';
-                debugButton.style.background = '#ff4444';
-            }
-        });
-        
-        document.body.appendChild(debugButton);
     }
 
     // アプリケーション開始
@@ -81,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
     debugLog(`🌐 URL: ${window.location.href}`);
 
     // デバッグエリアを作成
-    createDebugArea();
+    createDebugLogArea();
 
     // グローバル変数
     let cart = [];
@@ -159,42 +144,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // メニューデータの読み込み（修正版）
+    // メニューデータの読み込み
     async function loadMenuData() {
         try {
             debugLog(`📡 メニューデータ取得開始: ${GAS_API_URL}`);
             
-            // メニュー取得用のGETリクエスト（actionパラメータなし）
             const response = await fetch(GAS_API_URL);
             debugLog(`📡 メニュー取得レスポンス status: ${response.status}`);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
             
             const responseText = await response.text();
             debugLog(`📡 メニューレスポンステキスト長: ${responseText.length}文字`);
             
-            // JSONパースを試行
-            try {
-                menuData = JSON.parse(responseText);
-                debugLog(`📡 パース済みメニューデータ: ${menuData.length}件`);
-                
-                if (!Array.isArray(menuData)) {
-                    throw new Error('メニューデータが配列ではありません');
-                }
-                
-                displayMenu();
-                debugLog("✅ メニュー表示完了");
-            } catch (parseError) {
-                debugLog(`❌ JSONパースエラー: ${parseError.message}`);
-                debugLog(`📡 レスポンステキスト: ${responseText.substring(0, 200)}...`);
-                throw new Error(`メニューデータの解析に失敗しました: ${parseError.message}`);
-            }
+            menuData = JSON.parse(responseText);
+            debugLog(`📡 パース済みメニューデータ: ${menuData.length}件`);
             
+            displayMenu();
+            debugLog("✅ メニュー表示完了");
         } catch (error) {
             debugLog(`❌ メニュー取得エラー: ${error.message}`);
-            showError(`メニューの読み込みに失敗しました: ${error.message}`);
+            showError('メニューの読み込みに失敗しました。');
         }
     }
 
@@ -202,11 +170,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function displayMenu() {
         loadingIndicator.style.display = 'none';
         menuContainer.innerHTML = '';
-
-        if (!menuData || menuData.length === 0) {
-            menuContainer.innerHTML = '<p>メニューデータがありません。</p>';
-            return;
-        }
 
         menuData.forEach(item => {
             if (item.isAvailable) {
@@ -269,6 +232,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         updateModalPrice();
         modalBackdrop.style.display = 'flex';
+        debugLog("🛒 モーダル表示設定完了");
     }
 
     // モーダル閉じる
@@ -325,7 +289,7 @@ document.addEventListener('DOMContentLoaded', function() {
         debugLog(`🛒 カート更新: ${totalItems}点 / ${totalPrice}円`);
     }
 
-    // 注文送信（GETリクエスト方式）
+    // 注文送信（GETリクエストに変更）
     async function submitOrder() {
         debugLog("🚀 注文処理開始");
         
@@ -373,7 +337,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 debugLog(`⚠️ LINEメッセージの送信に失敗しましたが、注文は正常に処理されました: ${messageError.message}`);
             }
 
-            // GASにGETリクエストでデータ送信
+            // GASにGETリクエストでデータ送信（POSTからGETに変更）
             debugLog(`📡 GASにリクエスト送信開始: ${GAS_API_URL}`);
             
             const params = new URLSearchParams({
@@ -394,29 +358,23 @@ document.addEventListener('DOMContentLoaded', function() {
             
             debugLog(`📡 GASレスポンス status: ${response.status}`);
             
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            
             debugLog("📡 レスポンステキスト取得開始...");
             const responseText = await response.text();
             debugLog("📡 レスポンステキスト取得完了");
             
             debugLog(`📡 GASレスポンステキスト: ${responseText}`);
 
-            let result;
-            try {
-                result = JSON.parse(responseText);
-            } catch (parseError) {
-                debugLog(`❌ レスポンスJSONパースエラー: ${parseError.message}`);
-                throw new Error(`レスポンスの解析に失敗しました: ${parseError.message}`);
+            if (!response.ok) {
+                throw new Error(`GASレスポンスエラー: ${response.status}`);
             }
+
+            const result = JSON.parse(responseText);
             
             if (result.status === 'success') {
                 debugLog("✅ 注文処理成功");
                 
                 // 成功メッセージ表示
-                alert(`ご注文が完了しました！\n\n注文ID: ${orderId}\n注文内容: ${orderDetails}\n合計金額: ¥${totalPrice}\n\nLarkテーブルに保存されました。`);
+                alert(`ご注文が完了しました！\n\n注文ID: ${orderId}\n注文内容: ${orderDetails}\n合計金額: ¥${totalPrice}`);
                 
                 // カートをクリア
                 cart = [];
@@ -450,47 +408,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function showError(message) {
         loadingIndicator.innerHTML = `<p style="color: red;">エラー: ${message}</p>`;
     }
-
-    // GASエンドポイントテスト関数（デバッグ用）
-    window.testGasEndpoint = async function() {
-        debugLog("🧪 GASエンドポイントテスト開始");
-        try {
-            // メニュー取得テスト
-            debugLog("🧪 メニュー取得テスト");
-            const menuResponse = await fetch(GAS_API_URL);
-            const menuText = await menuResponse.text();
-            debugLog(`🧪 メニューレスポンス status: ${menuResponse.status}`);
-            debugLog(`🧪 メニューレスポンステキスト: ${menuText.substring(0, 200)}...`);
-            
-            // 注文処理テスト
-            debugLog("🧪 注文処理テスト");
-            const testParams = new URLSearchParams({
-                action: 'order',
-                orderId: 'test123',
-                userId: 'testUser',
-                displayName: 'テストユーザー',
-                orderDetails: 'テスト弁当 x 1',
-                totalPrice: '500'
-            });
-
-            const testUrl = `${GAS_API_URL}?${testParams.toString()}`;
-            debugLog(`🧪 テストURL: ${testUrl}`);
-            
-            const orderResponse = await fetch(testUrl);
-            const orderText = await orderResponse.text();
-            
-            debugLog(`🧪 注文レスポンス status: ${orderResponse.status}`);
-            debugLog(`🧪 注文レスポンステキスト: ${orderText}`);
-            
-            if (menuResponse.ok && orderResponse.ok) {
-                debugLog("✅ GASエンドポイントテスト成功");
-            } else {
-                debugLog("❌ GASエンドポイントテスト失敗");
-            }
-        } catch (error) {
-            debugLog(`❌ GASエンドポイントテストエラー: ${error.message}`);
-        }
-    };
 
     // 初期化実行
     setupEventListeners();
