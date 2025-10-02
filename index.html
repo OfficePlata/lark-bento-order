@@ -3,64 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>お弁当 注文</title>
+    <title>らくらく弁当 注文アプリ</title>
+    <!-- CSSファイルをリンク -->
     <link rel="stylesheet" href="style.css">
+    <!-- JavaScriptファイルをdeferで読み込み -->
+    <script src="app-v3.js" defer></script>
 </head>
 <body>
-    <header class="app-header">
-        <h1>お弁当メニュー</h1>
-    </header>
 
-    <main id="app-container">
-        <div id="loading-indicator">
-            <div class="spinner"></div>
+    <!-- メインコンテンツ -->
+    <div id="app">
+        <!-- ヘッダー -->
+        <header class="app-header">
+            <h1>らくらくキッチン 注文アプリ</h1>
+        </header>
+
+        <!-- メニューコンテナ -->
+        <main id="menu-container" class="menu-grid">
+            <!-- メニュー項目がここに挿入されます -->
+        </main>
+
+        <!-- ローディング / エラー表示エリア -->
+        <div id="loading-indicator" class="status-indicator">
             <p>メニューを読み込んでいます...</p>
-        </div>
-        <div id="menu-container" class="grid-container">
-            <!-- メニューアイテムがここに挿入されます -->
-        </div>
-    </main>
-
-    <footer class="app-footer">
-        <div class="cart-summary">
-            <span id="cart-item-count">0</span>点 / 合計 <span id="cart-total-price">0</span>円
-        </div>
-        <button id="confirm-order-button" class="confirm-button" disabled>注文を確定する</button>
-    </footer>
-
-    <!-- 商品詳細モーダル -->
-    <div id="modal-backdrop">
-        <div id="modal-content">
-            <button id="modal-close-button" class="close-button">&times;</button>
-            <img id="modal-image" src="" alt="商品画像">
-            <h2 id="modal-name"></h2>
-            <p id="modal-description"></p>
-            
-            <div class="options-group">
-                <h3>オプション</h3>
-                <div id="option-selector">
-                    <!-- オプションがここに挿入されます -->
-                </div>
-            </div>
-
-            <div class="quantity-group">
-                <h3>数量</h3>
-                <div class="quantity-control">
-                    <button id="decrease-qty">-</button>
-                    <span id="quantity">1</span>
-                    <button id="increase-qty">+</button>
-                </div>
-            </div>
-
-            <div class="modal-footer">
-                <p class="total-price">合計: ¥<span id="modal-price">0</span></p>
-                <button id="add-to-cart-button" class="add-to-cart-btn">カートに追加</button>
-            </div>
         </div>
     </div>
 
-    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <!-- 読み込むJSファイルをapp-v3.jsに変更 -->
-    <script src="app-v3.js"></script>
+    <!-- カート・注文フッター -->
+    <footer id="cart-footer" class="cart-footer">
+        <div class="cart-summary">
+            <span id="cart-item-count">0</span> 点 / 
+            合計 <span id="cart-total-price">0</span> 円
+        </div>
+        <button id="show-cart-button" class="action-button" disabled>
+            カートを見る
+        </button>
+    </footer>
+
+    <!-- 商品詳細モーダル -->
+    <div id="item-modal-backdrop" class="modal-backdrop">
+        <div id="item-modal" class="modal-content">
+            <img id="modal-image" class="modal-image" src="" alt="商品画像">
+            <h2 id="modal-name" class="modal-title"></h2>
+            <p id="modal-description" class="modal-description"></p>
+            
+            <div id="option-selector" class="option-selector"></div>
+            
+            <div class="quantity-selector">
+                <button id="decrease-qty" class="quantity-button">-</button>
+                <span id="quantity" class="quantity-display">1</span>
+                <button id="increase-qty" class="quantity-button">+</button>
+            </div>
+
+            <button id="add-to-cart-button" class="modal-action-button">
+                カートに追加 <span id="modal-price">0</span>円
+            </button>
+            <button id="close-item-modal-button" class="modal-close-button">&times;</button>
+        </div>
+    </div>
+
+    <!-- カート確認モーダル -->
+    <div id="cart-modal-backdrop" class="modal-backdrop">
+        <div class="modal-content cart-review-modal">
+            <h2 class="modal-title">注文内容の確認</h2>
+            <div id="cart-summary-list" class="cart-summary-list">
+                <!-- カート内容がここに挿入されます -->
+            </div>
+            <div class="cart-summary-total">
+                <span>合計</span>
+                <span id="cart-summary-total-price">0円</span>
+            </div>
+            <div class="modal-button-group">
+                <button id="close-cart-button" class="secondary-button">戻る</button>
+                <button id="confirm-order-button" class="action-button">注文を確定する</button>
+            </div>
+            <button id="close-cart-modal-button" class="modal-close-button">&times;</button>
+        </div>
+    </div>
+
 </body>
 </html>
+
+
