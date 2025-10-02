@@ -37,15 +37,26 @@
     // --- アプリケーション初期化 ---
     document.addEventListener('DOMContentLoaded', initializeApp);
 
-    function initializeApp() {
+    // ★★★★★【ここを修正しました】★★★★★
+    async function initializeApp() {
         if (MENU_API_URL.includes("ここに") || ORDER_API_URL.includes("ここに")) {
             showError("APIのURLが設定されていません。");
             return;
         }
-        liff.init({ liffId: LIFF_ID })
-            .then(fetchMenuData)
-            .catch(err => showError(`LIFFの初期化に失敗: ${err.message}`));
-        setupEventListeners();
+
+        try {
+            // 1. LIFFの初期化が完了するのを待つ
+            await liff.init({ liffId: LIFF_ID });
+            
+            // 2. イベントリスナーを設定する
+            setupEventListeners();
+
+            // 3. メニューデータを取得する
+            await fetchMenuData();
+
+        } catch (err) {
+            showError(`初期化処理に失敗しました: ${err.message}`);
+        }
     }
     
     // --- イベントリスナー設定 ---
