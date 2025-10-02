@@ -4,7 +4,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // 【重要】デプロイしたGASのURLをここに設定してください
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbz2NwKKzMTRHALP5Ue6__YLCdmThoN4z6d9_o2mzYez2HxTFvBmg7leanHKQ-zVKn1L/exec";
     // --- ▲▲▲ 最終設定項目 ▲▲▲ ---
-    // 【強化】モバイルデバッグ用のログ表示エリア
+
+    // 【強化】モバイル環境での問題解決用デバッグ機能
     let debugLogArea = null;
     let debugVisible = false;
     
@@ -18,16 +19,17 @@ document.addEventListener('DOMContentLoaded', function() {
             top: 0;
             left: 0;
             width: 100%;
-            height: 300px;
+            height: 250px;
             background: rgba(0,0,0,0.95);
             color: #00ff00;
             font-family: monospace;
-            font-size: 11px;
-            padding: 10px;
+            font-size: 10px;
+            padding: 8px;
             overflow-y: auto;
             z-index: 10000;
             display: none;
             border-bottom: 2px solid #00ff00;
+            box-sizing: border-box;
         `;
         document.body.appendChild(debugLogArea);
         
@@ -36,17 +38,18 @@ document.addEventListener('DOMContentLoaded', function() {
         toggleButton.textContent = 'DEBUG';
         toggleButton.style.cssText = `
             position: fixed;
-            top: 10px;
-            right: 10px;
+            top: 5px;
+            right: 5px;
             z-index: 10001;
             background: red;
             color: white;
             border: none;
-            padding: 8px 12px;
-            font-size: 14px;
+            padding: 6px 10px;
+            font-size: 12px;
             font-weight: bold;
-            border-radius: 4px;
+            border-radius: 3px;
             cursor: pointer;
+            min-width: 50px;
         `;
         toggleButton.onclick = () => {
             debugVisible = !debugVisible;
@@ -55,12 +58,12 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         document.body.appendChild(toggleButton);
 
-        // 【追加】自動的にデバッグエリアを表示（スマホ環境での問題調査用）
+        // 【重要】スマホ環境では自動的にデバッグエリアを表示
         setTimeout(() => {
             debugVisible = true;
             debugLogArea.style.display = 'block';
             toggleButton.style.background = 'green';
-        }, 1000);
+        }, 500);
     }
     
     function debugLog(message) {
@@ -71,23 +74,24 @@ document.addEventListener('DOMContentLoaded', function() {
         const timestamp = new Date().toLocaleTimeString();
         const logEntry = document.createElement('div');
         logEntry.textContent = `[${timestamp}] ${message}`;
-        logEntry.style.marginBottom = '2px';
+        logEntry.style.marginBottom = '1px';
+        logEntry.style.fontSize = '10px';
         debugLogArea.appendChild(logEntry);
         debugLogArea.scrollTop = debugLogArea.scrollHeight;
         
-        // 最大150行まで保持
-        while (debugLogArea.children.length > 150) {
+        // 最大200行まで保持
+        while (debugLogArea.children.length > 200) {
             debugLogArea.removeChild(debugLogArea.firstChild);
         }
     }
 
     // 【強化】エラーハンドリング
     window.addEventListener('error', function(e) {
-        debugLog(`❌ JavaScript Error: ${e.message} at ${e.filename}:${e.lineno}`);
+        debugLog(`❌ JS Error: ${e.message} at ${e.filename}:${e.lineno}`);
     });
     
     window.addEventListener('unhandledrejection', function(e) {
-        debugLog(`❌ Unhandled Promise Rejection: ${e.reason}`);
+        debugLog(`❌ Promise Rejection: ${e.reason}`);
     });
 
     let menuData = [];
@@ -97,19 +101,23 @@ document.addEventListener('DOMContentLoaded', function() {
     // DOM要素の取得（DOMContentLoadedで実行）
     let loadingIndicator, menuContainer, modalBackdrop, confirmOrderButton, addToCartButton, modalCloseButton, decreaseQtyButton, increaseQtyButton;
 
-    debugLog("🚀 アプリケーション開始");
-    debugLog(`📱 User Agent: ${navigator.userAgent}`);
+    debugLog("🚀 LIFF App Start");
+    debugLog(`📱 UA: ${navigator.userAgent.substring(0, 50)}...`);
     debugLog(`🌐 URL: ${window.location.href}`);
-    debugLog(`📡 GAS URL: ${GAS_API_URL}`);
+    debugLog(`📡 GAS: ${GAS_API_URL.substring(0, 50)}...`);
 
-    // 【強化】ネットワーク状態の確認
+    // 【追加】ネットワーク状態の確認
     if ('navigator' in window && 'onLine' in navigator) {
-        debugLog(`🌐 ネットワーク状態: ${navigator.onLine ? 'オンライン' : 'オフライン'}`);
+        debugLog(`🌐 Network: ${navigator.onLine ? 'Online' : 'Offline'}`);
     }
+
+    // 【追加】画面サイズの確認
+    debugLog(`📱 Screen: ${window.screen.width}x${window.screen.height}`);
+    debugLog(`📱 Viewport: ${window.innerWidth}x${window.innerHeight}`);
 
     // DOMContentLoadedイベントでDOM要素を取得し、イベントリスナーを設定
     document.addEventListener('DOMContentLoaded', function() {
-        debugLog("📄 DOM読み込み完了");
+        debugLog("📄 DOM Loaded");
         
         // DOM要素の取得
         loadingIndicator = document.getElementById('loading-indicator');
@@ -121,7 +129,7 @@ document.addEventListener('DOMContentLoaded', function() {
         decreaseQtyButton = document.getElementById('decrease-qty');
         increaseQtyButton = document.getElementById('increase-qty');
 
-        debugLog("🔗 DOM要素取得完了");
+        debugLog("🔗 DOM Elements Found");
 
         // イベントリスナーの設定
         setupEventListeners();
@@ -131,35 +139,35 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function setupEventListeners() {
-        debugLog("🔗 イベントリスナー設定開始");
+        debugLog("🔗 Setup Event Listeners");
 
         // モーダル閉じるボタンのイベントリスナー
         if (modalCloseButton) {
             modalCloseButton.addEventListener('click', closeModal);
-            debugLog("✅ モーダル閉じるボタンのイベントリスナー設定完了");
+            debugLog("✅ Modal Close Button OK");
         } else {
-            debugLog("❌ モーダル閉じるボタンが見つかりません");
+            debugLog("❌ Modal Close Button NG");
         }
 
         // モーダル背景クリックで閉じる機能
         if (modalBackdrop) {
             modalBackdrop.addEventListener('click', function(e) {
                 if (e.target === modalBackdrop) {
-                    debugLog("🛒 モーダル背景クリックで閉じる");
+                    debugLog("🛒 Modal BG Click Close");
                     closeModal();
                 }
             });
-            debugLog("✅ モーダル背景クリックイベントリスナー設定完了");
+            debugLog("✅ Modal BG Click OK");
         } else {
-            debugLog("❌ モーダル背景要素が見つかりません");
+            debugLog("❌ Modal BG NG");
         }
 
         // 注文確認ボタンのイベントリスナー
         if (confirmOrderButton) {
             confirmOrderButton.addEventListener('click', submitOrder);
-            debugLog("✅ 注文確認ボタンのイベントリスナー設定完了");
+            debugLog("✅ Confirm Button OK");
         } else {
-            debugLog("❌ 注文確認ボタンが見つかりません");
+            debugLog("❌ Confirm Button NG");
         }
 
         // 数量調整ボタンのイベントリスナー
@@ -171,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     updateModalPrice();
                 }
             });
-            debugLog("✅ 数量減少ボタンのイベントリスナー設定完了");
+            debugLog("✅ Decrease Button OK");
         }
 
         if (increaseQtyButton) {
@@ -180,7 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('quantity').textContent = ++qty;
                 updateModalPrice();
             });
-            debugLog("✅ 数量増加ボタンのイベントリスナー設定完了");
+            debugLog("✅ Increase Button OK");
         }
 
         // カートに追加ボタンのイベントリスナー
@@ -195,164 +203,218 @@ document.addEventListener('DOMContentLoaded', function() {
                     price: parseInt(selOptEl.dataset.price, 10)
                 };
                 cart.push({ id: currentItem.id, name: currentItem.name, quantity: qty, option: selOpt, totalPrice: selOpt.price * qty });
-                debugLog(`🛒 カートに追加: ${currentItem.name} x ${qty}`);
+                debugLog(`🛒 Add to Cart: ${currentItem.name} x ${qty}`);
                 updateCartView();
                 closeModal();
             });
-            debugLog("✅ カートに追加ボタンのイベントリスナー設定完了");
+            debugLog("✅ Add to Cart Button OK");
         }
 
-        debugLog("🔗 全イベントリスナー設定完了");
+        debugLog("🔗 All Event Listeners Set");
     }
 
     function initializeLiff() {
-        debugLog("🔄 LIFF初期化開始");
+        debugLog("🔄 LIFF Init Start");
+        
+        // 【重要】LIFF初期化前にタイムアウトを設定
+        const liffTimeout = setTimeout(() => {
+            debugLog("⏰ LIFF Init Timeout (10s)");
+            if (loadingIndicator) {
+                loadingIndicator.innerHTML = `
+                    <div style="color: red; text-align: center;">
+                        <p>LIFF初期化がタイムアウトしました</p>
+                        <button onclick="location.reload()" style="padding: 10px 20px; margin-top: 10px;">再読み込み</button>
+                    </div>
+                `;
+            }
+        }, 10000);
         
         liff.init({ liffId: MAIN_LIFF_ID })
             .then(() => {
-                debugLog("✅ LIFF初期化成功");
-                debugLog(`🔐 ログイン状態: ${liff.isLoggedIn()}`);
-                debugLog(`📱 LIFFクライアント: ${liff.isInClient()}`);
-                debugLog(`🔧 LIFF OS: ${liff.getOS()}`);
-                debugLog(`📊 LIFF言語: ${liff.getLanguage()}`);
-                debugLog(`🎯 LIFF版本: ${liff.getVersion()}`);
+                clearTimeout(liffTimeout);
+                debugLog("✅ LIFF Init Success");
+                debugLog(`🔐 Login: ${liff.isLoggedIn()}`);
+                debugLog(`📱 InClient: ${liff.isInClient()}`);
+                debugLog(`🔧 OS: ${liff.getOS()}`);
+                debugLog(`📊 Lang: ${liff.getLanguage()}`);
+                debugLog(`🎯 Ver: ${liff.getVersion()}`);
                 
-                // 【強化】メニューデータ取得を遅延実行
+                // 【重要】メニューデータ取得を少し遅延実行
                 setTimeout(() => {
                     fetchMenuData();
-                }, 500);
+                }, 1000);
             })
             .catch((err) => { 
-                debugLog(`❌ LIFF初期化失敗: ${err.message}`);
+                clearTimeout(liffTimeout);
+                debugLog(`❌ LIFF Init Failed: ${err.message}`);
                 console.error("LIFF init failed.", err);
                 if (loadingIndicator) {
-                    loadingIndicator.textContent = "LIFF初期化失敗";
+                    loadingIndicator.innerHTML = `
+                        <div style="color: red; text-align: center;">
+                            <p>LIFF初期化失敗</p>
+                            <p style="font-size: 12px;">${err.message}</p>
+                            <button onclick="location.reload()" style="padding: 10px 20px; margin-top: 10px;">再読み込み</button>
+                        </div>
+                    `;
                 }
             });
     }
 
-    // 【強化】メニューデータ取得関数
+    // 【大幅強化】メニューデータ取得関数
     async function fetchMenuData() {
         if (GAS_API_URL === "YOUR_FINAL_GAS_URL_HERE") {
-            debugLog("❌ GAS_API_URLが設定されていません");
+            debugLog("❌ GAS URL Not Set");
             if (loadingIndicator) {
                 loadingIndicator.textContent = "GAS_API_URLが設定されていません。";
             }
             return;
         }
 
-        debugLog(`📡 メニューデータ取得開始: ${GAS_API_URL}`);
+        debugLog(`📡 Fetch Menu Start`);
+        debugLog(`📡 URL: ${GAS_API_URL}`);
         
         try {
-            // 【追加】リクエスト前の詳細情報
-            debugLog(`📡 リクエスト準備中...`);
-            debugLog(`📡 URL検証: ${GAS_API_URL.startsWith('https://') ? 'HTTPS OK' : 'HTTP/HTTPS問題'}`);
+            // 【重要】リクエスト前の詳細チェック
+            debugLog(`📡 URL Check: ${GAS_API_URL.startsWith('https://') ? 'HTTPS OK' : 'HTTP/HTTPS NG'}`);
             
-            // 【強化】タイムアウト付きfetch
+            // 【重要】タイムアウト付きfetch（20秒）
             const controller = new AbortController();
             const timeoutId = setTimeout(() => {
                 controller.abort();
-                debugLog("⏰ リクエストタイムアウト（30秒）");
-            }, 30000);
+                debugLog("⏰ Fetch Timeout (20s)");
+            }, 20000);
 
-            debugLog(`📡 fetchリクエスト送信中...`);
-            const response = await fetch(GAS_API_URL, {
+            debugLog(`📡 Sending Request...`);
+            
+            // 【重要】リクエストオプションを明示的に設定
+            const fetchOptions = {
                 method: 'GET',
                 signal: controller.signal,
                 headers: {
                     'Accept': 'application/json',
-                    'Cache-Control': 'no-cache'
-                }
-            });
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                },
+                // 【追加】モバイル環境での問題対策
+                mode: 'cors',
+                credentials: 'omit'
+            };
+            
+            debugLog(`📡 Options: ${JSON.stringify(fetchOptions)}`);
+            
+            const response = await fetch(GAS_API_URL, fetchOptions);
             
             clearTimeout(timeoutId);
-            debugLog(`📡 レスポンス受信: status=${response.status}, ok=${response.ok}`);
-            debugLog(`📡 レスポンスヘッダー: ${JSON.stringify(Object.fromEntries(response.headers))}`);
+            debugLog(`📡 Response: status=${response.status}, ok=${response.ok}`);
+            debugLog(`📡 Headers: ${JSON.stringify(Object.fromEntries(response.headers))}`);
             
             if (!response.ok) {
-                throw new Error(`サーバー応答エラー: ${response.status} ${response.statusText}`);
+                throw new Error(`Server Error: ${response.status} ${response.statusText}`);
             }
             
-            debugLog(`📡 レスポンステキスト取得中...`);
+            debugLog(`📡 Getting Text...`);
             const responseText = await response.text();
-            debugLog(`📡 レスポンステキスト長: ${responseText.length}文字`);
-            debugLog(`📡 レスポンス内容（最初の200文字）: ${responseText.substring(0, 200)}`);
+            debugLog(`📡 Text Length: ${responseText.length}`);
+            debugLog(`📡 Text Preview: ${responseText.substring(0, 100)}...`);
             
-            debugLog(`📡 JSON解析中...`);
+            debugLog(`📡 Parsing JSON...`);
             menuData = JSON.parse(responseText);
-            debugLog(`📡 解析成功: ${Array.isArray(menuData) ? menuData.length : 'not array'}件`);
+            debugLog(`📡 Parsed: ${Array.isArray(menuData) ? menuData.length : typeof menuData} items`);
             
             if (menuData.error) {
-                throw new Error(menuData.error);
+                throw new Error(menuData.message || menuData.error);
             }
 
             if (!Array.isArray(menuData)) {
-                throw new Error(`メニューデータが配列ではありません: ${typeof menuData}`);
+                throw new Error(`Menu data is not array: ${typeof menuData}`);
             }
 
-            debugLog(`📡 メニューデータ詳細: ${JSON.stringify(menuData[0] || 'empty')}`);
+            if (menuData.length === 0) {
+                throw new Error('Menu data is empty');
+            }
+
+            debugLog(`📡 Menu Sample: ${JSON.stringify(menuData[0])}`);
             
             displayMenu(menuData);
             if (loadingIndicator) {
                 loadingIndicator.style.display = 'none';
             }
-            debugLog("✅ メニュー表示完了");
+            debugLog("✅ Menu Display Complete");
             
         } catch (error) {
-            debugLog(`❌ メニュー取得失敗: ${error.message}`);
-            debugLog(`❌ エラー詳細: ${error.stack || 'スタックなし'}`);
+            debugLog(`❌ Menu Fetch Failed: ${error.message}`);
+            debugLog(`❌ Error Type: ${error.name}`);
+            debugLog(`❌ Error Stack: ${error.stack || 'No stack'}`);
             console.error("Fetch menu failed:", error);
             
+            // 【重要】エラー時の詳細表示とフォールバック
             if (loadingIndicator) {
                 loadingIndicator.innerHTML = `
-                    <div style="color: red; font-size: 14px;">
-                        <p>メニュー読込失敗</p>
-                        <p style="font-size: 12px;">${error.message}</p>
-                        <button onclick="location.reload()" style="margin-top: 10px; padding: 8px 16px;">再読み込み</button>
+                    <div style="color: red; font-size: 14px; text-align: center; padding: 20px;">
+                        <h3>メニュー読込失敗</h3>
+                        <p style="font-size: 12px; margin: 10px 0;">${error.message}</p>
+                        <button onclick="location.reload()" style="margin: 5px; padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px;">再読み込み</button>
+                        <button onclick="showFallbackMenu()" style="margin: 5px; padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 4px;">テストメニュー表示</button>
                     </div>
                 `;
             }
 
-            // 【追加】フォールバック用のテストメニューデータ
-            debugLog("🔄 フォールバック用テストメニューを表示");
-            const fallbackMenu = [
-                {
-                    id: 1,
-                    name: "テスト弁当（フォールバック）",
-                    price_regular: 500,
-                    price_large: 600,
-                    price_small: 400,
-                    price_side_only: 300,
-                    description: "ネットワークエラー時のテスト用メニュー",
-                    imageUrl: "https://placehold.co/300x240/FF0000/white?text=ERROR",
-                    isAvailable: true
-                }
-            ];
-            
+            // 【追加】5秒後に自動的にフォールバックメニューを表示
             setTimeout(() => {
-                displayMenu(fallbackMenu);
-                if (loadingIndicator) {
-                    loadingIndicator.style.display = 'none';
-                }
-            }, 2000);
+                showFallbackMenu();
+            }, 5000);
         }
     }
 
+    // 【追加】フォールバック用メニュー表示関数
+    window.showFallbackMenu = function() {
+        debugLog("🔄 Show Fallback Menu");
+        const fallbackMenu = [
+            {
+                id: 1,
+                name: "テスト弁当（フォールバック）",
+                price_regular: 500,
+                price_large: 600,
+                price_small: 400,
+                price_side_only: 300,
+                description: "ネットワークエラー時のテスト用メニュー",
+                imageUrl: "https://placehold.co/300x240/FF6B6B/white?text=TEST+MENU",
+                isAvailable: true
+            },
+            {
+                id: 2,
+                name: "緊急用弁当",
+                price_regular: 450,
+                price_large: 550,
+                price_small: 350,
+                price_side_only: 250,
+                description: "システム復旧までの緊急用メニュー",
+                imageUrl: "https://placehold.co/300x240/4ECDC4/white?text=EMERGENCY",
+                isAvailable: true
+            }
+        ];
+        
+        displayMenu(fallbackMenu);
+        if (loadingIndicator) {
+            loadingIndicator.style.display = 'none';
+        }
+    };
+
     function displayMenu(items) {
         if (!menuContainer) {
-            debugLog("❌ メニューコンテナが見つかりません");
+            debugLog("❌ Menu Container Not Found");
             return;
         }
         
-        debugLog(`📋 メニュー表示開始: ${items.length}件`);
+        debugLog(`📋 Display Menu: ${items.length} items`);
         menuContainer.innerHTML = '';
         
         items.forEach((item, index) => {
-            debugLog(`📋 アイテム${index + 1}: ${item.name}`);
+            debugLog(`📋 Item ${index + 1}: ${item.name}`);
             const itemElement = document.createElement('div');
             itemElement.className = 'grid-item';
             itemElement.innerHTML = `
-                <img src="${item.imageUrl || 'https://placehold.co/300x240/eee/ccc?text=No+Image'}" alt="${item.name}">
+                <img src="${item.imageUrl || 'https://placehold.co/300x240/eee/ccc?text=No+Image'}" alt="${item.name}" loading="lazy">
                 <div class="item-info">
                     <p class="item-name">${item.name}</p>
                     <p class="item-price">¥${item.price_regular}</p>
@@ -361,14 +423,14 @@ document.addEventListener('DOMContentLoaded', function() {
             itemElement.addEventListener('click', () => openModal(item));
             menuContainer.appendChild(itemElement);
         });
-        debugLog(`📋 メニュー表示完了: ${items.length}件`);
+        debugLog(`📋 Menu Display Complete: ${items.length} items`);
     }
 
     function openModal(item) {
-        debugLog(`🛒 商品詳細モーダル開く: ${item.name}`);
+        debugLog(`🛒 Open Modal: ${item.name}`);
         
         if (!modalBackdrop) {
-            debugLog("❌ モーダル背景要素が見つかりません");
+            debugLog("❌ Modal Backdrop Not Found");
             return;
         }
         
@@ -414,16 +476,16 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // モーダル表示
         modalBackdrop.classList.add('visible');
-        debugLog("✅ モーダル表示完了");
+        debugLog("✅ Modal Opened");
     }
 
     function closeModal() {
-        debugLog("🛒 商品詳細モーダル閉じる");
+        debugLog("🛒 Close Modal");
         if (modalBackdrop) {
             modalBackdrop.classList.remove('visible');
-            debugLog("✅ モーダル非表示完了");
+            debugLog("✅ Modal Closed");
         } else {
-            debugLog("❌ モーダル背景要素が見つかりません");
+            debugLog("❌ Modal Backdrop Not Found");
         }
     }
 
@@ -436,7 +498,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const qty = parseInt(quantityElement.textContent, 10);
             const price = parseInt(selOpt.dataset.price, 10) * qty;
             modalPriceElement.textContent = price;
-            debugLog(`💰 モーダル価格更新: ¥${price}`);
+            debugLog(`💰 Price Update: ¥${price}`);
         }
     }
 
@@ -454,17 +516,17 @@ document.addEventListener('DOMContentLoaded', function() {
             confirmOrderButton.disabled = cart.length === 0;
         }
         
-        debugLog(`🛒 カート更新: ${totalItems}点 / ${totalPrice}円`);
+        debugLog(`🛒 Cart Update: ${totalItems} items / ¥${totalPrice}`);
     }
 
-    // submitOrder関数とsendLineMessageIfPossible関数は元のコードと同じ
+    // submitOrder関数とsendLineMessageIfPossible関数（既存のコードと同じ）
     async function submitOrder() {
         if (cart.length === 0) {
-            debugLog("❌ カートが空です");
+            debugLog("❌ Cart Empty");
             return;
         }
         
-        debugLog("🚀 注文処理開始");
+        debugLog("🚀 Submit Order Start");
         
         // ボタンを無効化してローディング状態にする
         if (confirmOrderButton) {
@@ -474,19 +536,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             // ログイン確認
-            debugLog(`🔐 ログイン状態確認: ${liff.isLoggedIn()}`);
+            debugLog(`🔐 Login Check: ${liff.isLoggedIn()}`);
             if (!liff.isLoggedIn()) {
-                debugLog("❌ ユーザーがログインしていません。ログインページにリダイレクト");
+                debugLog("❌ Not Logged In - Redirect to Login");
                 liff.login();
                 return; 
             }
             
             // ユーザー情報の取得
-            debugLog("👤 ユーザープロフィール取得開始");
+            debugLog("👤 Get Profile Start");
             const profile = await liff.getProfile();
             const userId = profile.userId;
             const displayName = profile.displayName;
-            debugLog(`👤 ユーザー情報取得成功: ${displayName} (${userId})`);
+            debugLog(`👤 Profile OK: ${displayName} (${userId})`);
 
             // 注文詳細の準備
             let orderDetailsText = '';
@@ -495,7 +557,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             const totalPrice = cart.reduce((sum, item) => sum + item.totalPrice, 0);
             
-            // 注文データの準備（新しい形式）
+            // 注文データの準備
             const orderData = {
                 orderId: new Date().getTime().toString() + Math.random().toString(36).substring(2, 8),
                 userId: userId,
@@ -504,13 +566,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 totalPrice: totalPrice
             };
             
-            debugLog(`📦 送信する注文データ: ${JSON.stringify(orderData)}`);
+            debugLog(`📦 Order Data: ${JSON.stringify(orderData)}`);
 
             // LINEメッセージ送信（可能な場合のみ）
             await sendLineMessageIfPossible(orderData);
 
             // GASへのリクエスト送信
-            debugLog(`📡 GASにリクエスト送信開始: ${GAS_API_URL}`);
+            debugLog(`📡 Send to GAS: ${GAS_API_URL}`);
             
             const fetchOptions = {
                 method: 'POST',
@@ -520,31 +582,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify(orderData)
             };
             
-            debugLog(`📡 送信オプション: ${JSON.stringify(fetchOptions)}`);
+            debugLog(`📡 POST Options: ${JSON.stringify(fetchOptions)}`);
             
             const response = await fetch(GAS_API_URL, fetchOptions);
-            debugLog(`📡 GASレスポンス status: ${response.status}`);
+            debugLog(`📡 GAS Response: status=${response.status}`);
             
             if (!response.ok) {
-                throw new Error(`サーバー応答エラー: ${response.status} ${response.statusText}`);
+                throw new Error(`Server Error: ${response.status} ${response.statusText}`);
             }
             
             const responseText = await response.text();
-            debugLog(`📡 GASレスポンステキスト: ${responseText}`);
+            debugLog(`📡 GAS Response Text: ${responseText}`);
             
             let result;
             try {
                 result = JSON.parse(responseText);
             } catch (parseError) {
-                debugLog(`❌ JSON解析エラー: ${parseError.message}`);
-                debugLog(`📡 生レスポンス: ${responseText}`);
-                throw new Error(`レスポンス解析失敗: ${parseError.message}`);
+                debugLog(`❌ JSON Parse Error: ${parseError.message}`);
+                debugLog(`📡 Raw Response: ${responseText}`);
+                throw new Error(`Response Parse Failed: ${parseError.message}`);
             }
             
-            debugLog(`📡 解析済みレスポンス: ${JSON.stringify(result)}`);
+            debugLog(`📡 Parsed Response: ${JSON.stringify(result)}`);
             
             if (result.success || result.status === 'success') {
-                debugLog("✅ 注文送信成功");
+                debugLog("✅ Order Success");
                 cart = [];
                 updateCartView();
                 
@@ -562,7 +624,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
         } catch (error) {
-            debugLog(`❌ 注文送信失敗: ${error.message}`);
+            debugLog(`❌ Order Failed: ${error.message}`);
             console.error("Submit order failed:", error);
             alert(`注文送信に失敗しました: ${error.message}`);
         } finally {
@@ -578,7 +640,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function sendLineMessageIfPossible(orderData) {
         try {
             if (!liff.isInClient()) {
-                debugLog("📱 LINEクライアント外のため、メッセージ送信をスキップ");
+                debugLog("📱 Not In Client - Skip Message");
                 return;
             }
 
@@ -588,9 +650,9 @@ document.addEventListener('DOMContentLoaded', function() {
             };
 
             await liff.sendMessages([message]);
-            debugLog("📱 LINEメッセージ送信成功");
+            debugLog("📱 LINE Message Sent");
         } catch (error) {
-            debugLog(`📱 LINEメッセージ送信失敗: ${error.message}`);
+            debugLog(`📱 LINE Message Failed: ${error.message}`);
             // メッセージ送信失敗は致命的エラーではないので続行
         }
     }
