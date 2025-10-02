@@ -298,25 +298,123 @@ async function confirmAndSubmitOrder() {
  * ユーザーにLINEでサンクスメッセージを送信
  * @param {object} orderData - 注文データ
  */
+/**
+ * ユーザーにLINEでサンクスメッセージを送信（Flex Message版）
+ * @param {object} orderData - 注文データ
+ */
 async function sendThanksMessage(orderData) {
     if (!liff.isInClient()) return;
 
-    const itemsText = orderData.cart.map(item => 
-        `・${item.name} (${item.option.name}) x ${item.quantity}`
-    ).join('\n');
-
-    const message = `ご注文ありがとうございます！\n\n【ご注文内容】\n${itemsText}\n\n【合計金額】\n¥${orderData.totalPrice}`;
+    // Flex MessageのJSONオブジェクトを生成
+    const flexMessage = createReceiptFlexMessage(orderData);
 
     try {
-        await liff.sendMessages([{
-            type: 'text',
-            text: message
-        }]);
+        await liff.sendMessages([flexMessage]); // 配列に格納して送信
     } catch (err) {
         console.error('メッセージの送信に失敗しました:', err);
-        // メッセージ送信が失敗しても注文は完了している旨を伝える
         alert('確認メッセージの送信には失敗しましたが、ご注文は受け付けられております。');
     }
+}
+
+/**
+ * 注文データからレシート風のFlex Messageを生成する
+ * @param {object} orderData - 注文データ
+ * @returns {object} Flex Message JSON Object
+ */
+function createReceiptFlexMessage(orderData) {
+    // 注文内容の詳細部分を動的に生成
+    const itemDetailsContents = orderData.cart.map(item => ({
+        "type": "box",
+        "layout": "horizontal",
+        "contents": [
+            {
+                "type": "text",
+                "text": `${item.name} (${item.option.name})`,
+                "wrap": true,
+                "flex": 3
+            },
+            {
+                "type": "text",
+                "text": `x ${item.quantity}`,
+                "flex": 1,
+                "align": "end"
+            }
+        ]
+    }));
+
+    // Flex Messageの本体
+    return {
+        "type": "flex",
+        "altText": "ご注文内容の確認",
+        "contents": {
+            "type": "bubble",
+            "header": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "ご注文ありがとうございます！",
+                        "weight": "bold",
+                        "color": "#1DB446",
+                        "size": "md"
+                    },
+                    {
+                        "type": "text",
+                        "text": "ご注文内容が確定しました",
+                        "weight": "bold",
+                        "size": "xl",
+                        "margin": "md"
+                    }
+                ]
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "ご注文内容",
+                        "size": "xs",
+                        "color": "#aaaaaa"
+                    },
+                    {
+                        "type": "separator",
+                        "margin": "md"
+                    },
+                    // ここに動的に生成した注文内容が入る
+                    ...itemDetailsContents,
+                    {
+                        "type": "separator",
+                        "margin": "lg"
+                    },
+                    {
+                        "type": "box",
+                        "layout": "horizontal",
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": "合計金額",
+                                "weight": "bold"
+                            },
+                            {
+                                "type": "text",
+                                "text": `¥${orderData.totalPrice}`,
+                                "weight": "bold",
+                                "align": "end"
+                            }
+                        ],
+                        "margin": "md"
+                    }
+                ]
+            },
+            "styles": {
+                "header": {
+                    "backgroundColor": "#F0FFF0"
+                }
+            }
+        }
+    };
 }
 
 /**
