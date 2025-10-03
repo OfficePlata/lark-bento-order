@@ -293,3 +293,66 @@ body {
     background-color: #ccc;
     cursor: wait;
 }
+/* style.css の一番下に以下を追記してください */
+
+.item-detail-body {
+    padding: 1rem;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.item-detail-img {
+    width: 100%;
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+#item-detail-description {
+    margin-bottom: 1.5rem;
+    color: #555;
+    line-height: 1.6;
+}
+
+.item-options {
+    margin-bottom: 1.5rem;
+}
+
+/* ラジオボタンをカスタムスタイルにするための設定 */
+.option-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+/* チェックされたラベルのスタイル */
+.option-label:has(input:checked) {
+    border-color: var(--primary-color);
+    background-color: #f0fff0;
+    font-weight: bold;
+}
+
+/* 元のラジオボタンは非表示にする */
+.option-label input[type="radio"] {
+    display: none;
+}
+
+.option-price {
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+.quantity-selector {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    font-size: 1rem;
+}
