@@ -30,6 +30,31 @@
     </div>
   </footer>
 
+  <div id="item-detail-modal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="item-detail-name">商品名</h2>
+        <button id="close-item-detail-modal" class="close-button">&times;</button>
+      </div>
+      <div class="item-detail-body">
+          <img id="item-detail-img" src="" alt="商品画像" class="item-detail-img">
+          <p id="item-detail-description">ここに商品の説明が入ります。</p>
+          <div id="item-detail-options" class="item-options">
+              </div>
+          <div class="quantity-selector">
+              <span>数量:</span>
+              <div class="quantity-controls">
+                  <button id="item-detail-decrease" class="quantity-btn">-</button>
+                  <span id="item-detail-quantity" class="quantity-display">1</span>
+                  <button id="item-detail-increase" class="quantity-btn">+</button>
+              </div>
+          </div>
+      </div>
+      <div class="modal-footer">
+          <button id="add-to-cart-button" class="submit-button">カートに追加する</button>
+      </div>
+    </div>
+  </div>
   <div id="cart-modal" class="modal-overlay">
     <div class="modal-content">
       <div class="modal-header">
